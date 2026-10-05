@@ -139,7 +139,7 @@
   <header>
     <div class="tag">// internal tool</div>
     <h1>BuyGoods Funnel Builder</h1>
-    <p>Paste an offer flow (Main page / Upsell N / Downsell N + URLs + pack pricing), set the account ID and product name, and get back tracking scripts, conversion iframes, and buy links for every step — formatted like the integration doc. Everything runs locally in your browser, nothing is sent anywhere.</p>
+    <p>Paste an offer flow (Main page / Upsell N / Downsell N + URLs + pack pricing), set the account ID and product name, and get back tracking scripts, conversion iframes, and buy links for every step — formatted like the integration doc.</p>
   </header>
 
   <div class="panel">
@@ -155,7 +155,7 @@
         <div class="hint">First 3 letters → codename prefix (e.g. "RetraSlim" → ret). Used as fallback if the offer flow text doesn't specify a product name per page — if it does (e.g. "GlucoVital - 6 packs…"), that name takes priority.</div>
       </div>
       <div class="field">
-        <label for="token">Conversion token (iframe "t" param) — optional <span class="tip-icon" data-img="IMAGE3">?</span></label>
+        <label for="token">Affiliate token (iframe "t" param) — optional <span class="tip-icon" data-img="IMAGE3">?</span></label>
         <input type="text" id="token" placeholder="aa90d7127be44d23c555a7ba130fd20a">
         <div class="hint">Leave blank to insert a placeholder you can fill in later.</div>
       </div>
@@ -175,11 +175,11 @@
         </select>
       </div>
       <div class="field" style="display:flex;align-items:flex-end;padding-bottom:2px;">
-        <div>
+      <!--  <div>
           <label style="margin-bottom:8px;">Split funnel mode <span class="tip-icon" data-img="IMAGE6">?</span></label>
           <button class="toggle-btn" id="splitToggle" onclick="toggleSplit()">Split Funnel: OFF</button>
           <div class="hint" style="margin-top:8px;">When ON, use letter suffixes in labels: "Upsell 1 a" routes buyers of option 1, "Upsell 1 b" routes buyers of option 2, etc. The main page buy links will then redirect each product to its own variant branch.</div>
-        </div>
+        </div>-->
       </div>
     </div>
   </div>
@@ -198,7 +198,7 @@ Upsell 2: https://retraslim.app/orderup1-v1?f=89s6iw&fnid=39&pfnid=37
 
 Downsell 1: https://retraslim.app/orderdw1-v1?f=89s6iw&fnid=19&pfnid=17
 (RetraSlim - 3 packs for $147 - $49 each + 3 FREE packs)"></textarea>
-      <div class="hint">Recognized labels: "Main page", "Upsell 1", "Downsell 1". For split funnels add a letter: "Upsell 1 a", "Upsell 1 b", "Downsell 1 a". Pack counts are read from patterns like "4 packs for $196" — bonus/free (e.g. "+ 2 FREE packs") are ignored. If a page names a different product ("GlucoVital - 4 packs…"), its codenames use the first 3 letters of that product automatically. Downsell POP UP entries inherit the latest Upsell URL until a different Upsell URL appears; No opens the next popup and Buy/Yes goes to the next Upsell.</div>
+      <div class="hint">Paste the compliance document here. No changes needed! </div>
     </div>
     <div class="actions">
       <button class="btn-primary" onclick="recordGenerateClick(); generate()">Generate funnel</button>
