@@ -239,30 +239,25 @@ Downsell 1: https://retraslim.app/orderdw1-v1?f=89s6iw&fnid=19&pfnid=17
 let lastModel = null;
 let lastOutput = "";
 let lastSettings = null;
-const GENERATE_CLICK_STORAGE_KEY = 'bgtoolcodex.generateClicks';
-let generateClickCount = 0;
-try {
-  generateClickCount = Math.max(0, parseInt(localStorage.getItem(GENERATE_CLICK_STORAGE_KEY) || '0', 10) || 0);
-} catch(e) {}
-
-function getGenerateClickCount(){
+async function recordGenerateClick(){
   try {
-    const saved = parseInt(localStorage.getItem(GENERATE_CLICK_STORAGE_KEY) || '0', 10);
-    if(Number.isFinite(saved) && saved >= 0) generateClickCount = saved;
-  } catch(e) {}
-  return generateClickCount;
+    const response = await fetch('/api/generate-clicks', {method:'POST'});
+    if(!response.ok) throw new Error(`Click logging failed (${response.status})`);
+    return await response.json();
+  } catch(error) {
+    console.error('Could not store this Generate funnel click:', error);
+    return null;
+  }
 }
 
-function recordGenerateClick(){
-  generateClickCount = getGenerateClickCount() + 1;
-  try { localStorage.setItem(GENERATE_CLICK_STORAGE_KEY, String(generateClickCount)); } catch(e) {}
-}
-
-// Type `getclicks` in the browser console to read the saved Generate funnel click count.
-Object.defineProperty(window, 'getclicks', {
-  configurable:true,
-  get:getGenerateClickCount
-});
+// In the browser console run getclicks() to fetch the all-time total from Supabase.
+window.getclicks = async function getclicks(){
+  const response = await fetch('/api/generate-clicks', {cache:'no-store'});
+  if(!response.ok) throw new Error(`Could not read click total (${response.status})`);
+  const {total} = await response.json();
+  console.log(`Generate funnel clicks: ${total}`);
+  return total;
+};
 
 const ALPHA = 'abcdefghijklmnopqrstuvwxyz'.split('');
 
