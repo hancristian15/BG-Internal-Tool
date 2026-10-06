@@ -1567,7 +1567,9 @@ function syncSplitPageLabels(){
       [...root.variants].forEach(variant => {
         let current = root.target;
         let currentNum = root.num;
-        const visited = new Set([rootId]);
+        // Process the selected root first, then guard against loops as the
+        // route advances through subsequent upsells.
+        const visited = new Set();
         while(current && !visited.has(current.id)){
           visited.add(current.id);
           const start = lastModel.pages.indexOf(current);
