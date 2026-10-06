@@ -218,7 +218,6 @@
     <h2>Shared document preview</h2>
     <div id="sharedDocumentMeta" class="doc-status"></div>
     <div class="actions">
-      <button class="btn-ghost" onclick="returnFromSharedPreview()">Back to builder</button>
       <button class="btn-ghost" onclick="copyShareLink()">Copy share URL</button>
     </div>
     <pre id="sharedDocumentOutput" class="shared-output"></pre>
@@ -938,12 +937,6 @@ async function loadSavedDocument(id){
 async function copyShareLink(){
   try { await navigator.clipboard.writeText(window.location.href); }
   catch(error) { window.prompt('Copy this share URL:', window.location.href); }
-}
-
-function returnFromSharedPreview(){
-  const url = new URL(window.location.href);
-  url.searchParams.delete('share');
-  window.location.assign(url.toString());
 }
 
 async function loadSharedPreview(token){
