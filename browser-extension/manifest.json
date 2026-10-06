@@ -1,0 +1,25 @@
+{
+  "manifest_version": 3,
+  "name": "BuyGoods Tracking Verifier",
+  "version": "1.0.0",
+  "description": "Checks BuyGoods tracking on a page in a background tab without leaving the tool.",
+  "minimum_chrome_version": "116",
+  "permissions": ["alarms", "scripting", "storage"],
+  "optional_permissions": ["webRequest"],
+  "optional_host_permissions": ["http://*/*", "https://*/*"],
+  "background": { "service_worker": "background.js" },
+  "action": {
+    "default_title": "BuyGoods Tracking Verifier",
+    "default_popup": "popup.html"
+  },
+  "content_scripts": [
+    {
+      "matches": [
+        "https://bgtool-git-dev-buy-goods-internal.vercel.app/*",
+        "https://bgtool-rho.vercel.app/*"
+      ],
+      "js": ["bridge.js"],
+      "run_at": "document_start"
+    }
+  ]
+}

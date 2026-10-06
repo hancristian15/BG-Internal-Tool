@@ -37,8 +37,12 @@ After running the SQL and adding the variables in Vercel, redeploy the project. 
 
 ## Affiliate Manager
 
-The Affiliate Manager view is available from the right side of the in-page tool navigation. It opens a public HTTP or HTTPS offer page in a clean headless Chromium session, waits for page scripts to run, then checks the rendered BuyGoods tracking code and checkout links for `sessid2` and `aff_id`. The browser verifier is implemented in `api/verify-tracking.js`; its front-end is in `affiliate-manager.js`.
+The Affiliate Manager view is available from the right side of the in-page tool navigation. It opens a public HTTP or HTTPS offer page in a clean headless Chromium session, waits for page scripts to run, then checks the rendered BuyGoods tracking code and checkout links for `sessid2` and `aff_id`. The hosted verifier is implemented in `api/verify-tracking.js`; its front-end is in `affiliate-manager.js`.
 
 The verifier rejects non-public hosts, private or loopback IP addresses, and non-standard ports. It uses `@sparticuz/chromium` with `puppeteer-core`, so the Vercel project runs on Node.js 24.x.
 
-If the destination returns HTTP 403, its CDN or firewall is denying the Vercel browser request. Use “Verify in my browser” for pages you can open normally: add the supplied bookmarklet once, open the page from the tool, wait for its scripts to run, then click the bookmarklet. It reads the rendered page in that browser and sends only the tracking results back to the tool. The server-side checker does not override a destination site's access rules.
+If the destination returns HTTP 403, use **Verify without leaving this page**. This option uses the local Chrome/Edge extension in `browser-extension/` to open the offer in an inactive background tab, inspect its rendered source after scripts run, and return only the tracking results. The tool tab remains active. The extension asks for host access separately for each site and does not read cookie values.
+
+To install it, open `chrome://extensions` (Chrome) or `edge://extensions` (Edge), enable **Developer mode**, choose **Load unpacked**, and select the repository's `browser-extension/` folder. The content bridge currently matches the dev and production Vercel aliases declared in `browser-extension/manifest.json`.
+
+If the local browser also receives HTTP 403, the result includes a Cloudflare Ray ID when the response has one. In Cloudflare, open the zone's **Analytics → Events**, filter around the request time by host/path and Block or Challenge, then inspect the matching event's service and rule. If no event matches, the block may be at the origin or another CDN. Cloudflare recommends using a narrowly scoped custom-rule Skip exception when a specific false positive is confirmed; do not disable all firewall protections for this check.
