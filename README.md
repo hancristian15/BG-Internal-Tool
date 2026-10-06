@@ -41,4 +41,4 @@ The Affiliate Manager view is available from the right side of the in-page tool 
 
 The verifier rejects non-public hosts, private or loopback IP addresses, and non-standard ports. It uses `@sparticuz/chromium` with `puppeteer-core`, so the Vercel project runs on Node.js 24.x.
 
-If the destination returns HTTP 403, its CDN or firewall is denying the Vercel browser request. The site administrator must allow the verifier, or the check must run from a browser session authorized by that site. The tool does not override a destination site's access rules.
+If the destination returns HTTP 403, its CDN or firewall is denying the Vercel browser request. Use “Verify in my browser” for pages you can open normally: add the supplied bookmarklet once, open the page from the tool, wait for its scripts to run, then click the bookmarklet. It reads the rendered page in that browser and sends only the tracking results back to the tool. The server-side checker does not override a destination site's access rules.

@@ -51,6 +51,8 @@
   .affiliate-form input{flex:1;min-width:0;}
   .affiliate-form .btn-primary{white-space:nowrap;background:#435ee8;border-color:#435ee8;color:white;}
   .affiliate-form .btn-primary:hover{background:#344cc9;border-color:#344cc9;}
+  .affiliate-local-row{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-top:12px;}
+  .affiliate-local-row a{display:inline-flex;align-items:center;padding:12px 20px;border-radius:7px;font-family:var(--sans);font-size:14px;font-weight:600;text-decoration:none;}
   .affiliate-result{margin-top:18px;padding:17px;border:1px solid var(--line);border-radius:11px;background:var(--panel-2);}
   .affiliate-result[hidden]{display:none!important;}
   .affiliate-result-title{margin-bottom:13px;font-size:15px;font-weight:700;}
@@ -338,12 +340,18 @@ Downsell 1: https://retraslim.app/orderdw1-v1?f=89s6iw&fnid=19&pfnid=17
     </header>
     <section class="affiliate-checker" aria-labelledby="trackingCheckerTitle">
       <h2 id="trackingCheckerTitle">Verify tracking</h2>
-      <div class="hint">Enter the public landing page URL. The page will be opened in a clean browser so its scripts can run before the links are checked.</div>
+      <div class="hint">Enter the landing page URL. The hosted check runs in Vercel; if the site blocks it, use the local browser check below.</div>
       <form class="affiliate-form" id="trackingVerifyForm">
         <input type="url" id="trackingPageUrl" placeholder="https://yourdomain.com/offer" autocomplete="url" required>
         <button class="btn-primary" id="verifyTrackingButton" type="submit">Verify Tracking</button>
       </form>
       <div class="doc-status" id="trackingVerifyStatus" role="status" aria-live="polite"></div>
+      <div class="affiliate-local-row">
+        <button class="btn-ghost" id="verifyTrackingLocalButton" type="button">Verify in my browser</button>
+        <a class="btn-ghost" id="trackingBookmarklet" href="#" draggable="true">Tracking Check bookmarklet</a>
+      </div>
+      <div class="hint">One-time setup: drag the bookmarklet to your bookmarks bar (Ctrl+Shift+B shows it in Chrome/Edge). Open the page with “Verify in my browser”, wait for it to load, then click the saved bookmark. Results return here.</div>
+      <div class="doc-status" id="trackingLocalStatus" role="status" aria-live="polite"></div>
       <div class="affiliate-result" id="trackingVerifyResult" aria-live="polite" hidden>
         <div class="affiliate-result-title" id="trackingVerifyHeadline"></div>
         <div class="affiliate-check-list" id="trackingVerifyChecks"></div>
