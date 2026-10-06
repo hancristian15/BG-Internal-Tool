@@ -117,6 +117,8 @@
   .btn-primary:hover{opacity:.9;}
   .btn-ghost{background:transparent;border:1px solid var(--line);color:var(--text);}
   .btn-ghost:hover{border-color:var(--amber);color:var(--amber);}
+  .btn-danger{background:transparent;border:1px solid rgba(220,90,95,.55);color:#e58a8d;}
+  .btn-danger:hover{border-color:var(--red);color:#ffb3b8;background:rgba(180,50,58,.12);}
   .actions{display:flex;gap:10px;align-items:center;margin-top:18px;}
 
   #flowBox{display:flex;flex-wrap:wrap;gap:0;align-items:center;}
@@ -339,6 +341,7 @@ Downsell 1: https://retraslim.app/orderdw1-v1?f=89s6iw&fnid=19&pfnid=17
       <button class="btn-ghost" onclick="copyOutput()">Copy to clipboard</button>
       <button class="btn-ghost" onclick="downloadOutput()">Download .txt</button>
       <button class="btn-ghost" id="saveDocumentButton" onclick="saveDocumentChanges()" style="display:none;">Save changes</button>
+      <button class="btn-danger" id="deleteDocumentButton" onclick="deleteSavedDocument()" style="display:none;">Delete permanently</button>
       <span id="copiedMsg" class="copied" style="display:none;">Copied ✓</span>
     </div>
     <div id="documentSaveStatus" class="doc-status"></div>
@@ -895,6 +898,7 @@ async function editExistingDuplicate(){
 async function saveCurrentAsSecondDocument(){
   closeDuplicateDialog();
   editingDocumentId = null;
+  document.getElementById('deleteDocumentButton').style.display = 'none';
   try { await saveCurrentDocument({allowDuplicate:true}); }
   catch(error) { setDocumentStatus(`Could not save second document: ${error.message}`, true); }
 }
@@ -913,6 +917,7 @@ async function saveCurrentDocument({id = null, allowDuplicate = false} = {}){
   });
   editingDocumentId = result.id;
   document.getElementById('saveDocumentButton').style.display = 'inline-block';
+  document.getElementById('deleteDocumentButton').style.display = 'inline-block';
   const label = id ? 'Updated' : 'Saved';
   setDocumentStatus(`${label}: ${result.documentName}`, false, result.shareToken);
   return result;
@@ -954,7 +959,7 @@ async function searchSavedDocuments(){
     const data = await apiJson(`/api/documents?action=search&q=${encodeURIComponent(query)}`);
     if(requestSequence !== documentSearchSequence) return;
     if(!data.documents?.length){ results.innerHTML = '<div class="doc-status">No saved documents found.</div>'; return; }
-    results.innerHTML = data.documents.map(doc => `<div class="doc-card"><div><div class="doc-card-title">${escapeHtml(doc.document_name)}</div><div class="doc-card-meta">Account ${escapeHtml(doc.account_id)} · ${escapeHtml(doc.product_name)} · Created ${formatDocumentDate(doc.created_at)}</div></div><div class="doc-card-actions"><a class="btn-ghost" href="${escapeHtml(makeShareUrl(doc.share_token))}" target="_blank" rel="noopener">Preview</a><button class="btn-primary" onclick="loadSavedDocument('${escapeHtml(doc.id)}')">Edit</button></div></div>`).join('');
+    results.innerHTML = data.documents.map(doc => `<div class="doc-card"><div><div class="doc-card-title">${escapeHtml(doc.document_name)}</div><div class="doc-card-meta">Account ${escapeHtml(doc.account_id)} · ${escapeHtml(doc.product_name)} · Created ${formatDocumentDate(doc.created_at)}</div></div><div class="doc-card-actions"><a class="btn-ghost" href="${escapeHtml(makeShareUrl(doc.share_token))}" target="_blank" rel="noopener">Preview</a><button class="btn-primary" onclick="loadSavedDocument('${escapeHtml(doc.id)}')">Edit</button><button class="btn-danger" onclick="deleteSavedDocument('${escapeHtml(doc.id)}')">Delete</button></div></div>`).join('');
   } catch(error) {
     if(requestSequence === documentSearchSequence) results.textContent = `Search failed: ${error.message}`;
   }
@@ -976,6 +981,7 @@ async function loadSavedDocument(id){
     lastModel = {pages:state.pages.map(page => JSON.parse(JSON.stringify(page))), thankYouUrl:state.thankYouUrlResolved || '', fallbackProductName:state.fallbackProductName || state.productName};
     lastSettings = {accountId:state.accountId || doc.account_id, productName:state.productName || doc.product_name, token:state.token || '', lang:state.lang || 'en', splitFunnel:!!state.splitFunnel};
     editingDocumentId = doc.id;
+    document.getElementById('deleteDocumentButton').style.display = 'inline-block';
     syncSplitPageLabels();
     renderFlow(lastModel, lastSettings.splitFunnel);
     renderTable(lastModel);
@@ -998,6 +1004,29 @@ async function loadSavedDocument(id){
 async function copyShareLink(){
   try { await navigator.clipboard.writeText(window.location.href); }
   catch(error) { window.prompt('Copy this share URL:', window.location.href); }
+}
+
+async function deleteSavedDocument(id = editingDocumentId){
+  if(!id) return;
+  const confirmed = window.confirm('Delete this saved document permanently? This removes its database record and stored file, and its share link will stop working.');
+  if(!confirmed) return;
+  const button = document.getElementById('deleteDocumentButton');
+  if(button) button.disabled = true;
+  setDocumentStatus('Deleting saved document…');
+  try {
+    await apiJson(`/api/documents?action=delete&id=${encodeURIComponent(id)}`, {method:'DELETE'});
+    if(editingDocumentId === id){
+      editingDocumentId = null;
+      document.getElementById('saveDocumentButton').style.display = 'none';
+      document.getElementById('deleteDocumentButton').style.display = 'none';
+    }
+    setDocumentStatus('Document permanently deleted from the database and file storage.');
+    if(document.getElementById('documentSearch').value.trim()) await searchSavedDocuments();
+  } catch(error) {
+    setDocumentStatus(`Could not delete document: ${error.message}`, true);
+  } finally {
+    if(button) button.disabled = false;
+  }
 }
 
 async function loadSharedPreview(token){
@@ -1214,7 +1243,8 @@ function renderFlow(model, splitFunnel){
     return;
   }
 
-  // Split mode: one labeled row per letter-branch
+  // Split mode: render the actual route for each branch, starting at the
+  // destination selected for that product and following shared pages in order.
   box.style.cssText = 'display:flex;flex-direction:column;flex-wrap:nowrap;gap:0;align-items:stretch;';
 
   const mainPage   = model.pages.find(p => p.type === 'main');
@@ -1222,28 +1252,24 @@ function renderFlow(model, splitFunnel){
   const variants   = [...new Set(
     model.pages.filter(p => { const v = stepVariantFor(p); return v && v !== 'pop'; }).map(stepVariantFor)
   )].sort();
-  const stepNums = [...new Set(model.pages.filter(p => p.type === 'upsell' || p.type === 'downsell').map(stepNumFor))].sort((a,b) => a-b);
-
   variants.forEach((v, vi) => {
-    // Build chain: Main → Upsell N-v (or no-variant) → Downsell N-v (or no-variant) → …
     const chain = [];
     if(mainPage) chain.push(mainPage);
-
-    for(const n of stepNums){
-      const u = model.pages.find(p => p.type==='upsell'   && stepNumFor(p)===n && stepVariantFor(p)===v)
-             || model.pages.find(p => p.type==='upsell'   && stepNumFor(p)===n && !stepVariantFor(p));
-      if(u) chain.push(u);
-
-      const d = model.pages.find(p => p.type==='downsell' && !p.isPopup && stepNumFor(p)===n && stepVariantFor(p)===v)
-             || model.pages.find(p => p.type==='downsell' && !p.isPopup && stepNumFor(p)===n && !stepVariantFor(p))
-             || model.pages.find(p => p.type==='downsell' && !p.isPopup && stepNumFor(p)===n);
-      if(d) chain.push(d);
-      chain.push(...model.pages.filter(p => {
-        if(!p.isPopup || stepNumFor(p)!==n) return false;
-        const parent = model.pages.find(q => q.type === 'upsell' && q.url === p.parentUpsellUrl);
-        const parentVariant = parent ? stepVariantFor(parent) : null;
-        return !parentVariant || parentVariant === v;
-      }).sort((a,b)=>a.popupIndex-b.popupIndex));
+    const targetId = mainPage?.buyTargetIds?.[vi];
+    const targetUrl = mainPage?.buyTargets?.[vi];
+    let current = (targetId && model.pages.find(p => p.id === targetId))
+      || (targetUrl && model.pages.find(p => p.type === 'upsell' && p.url === targetUrl))
+      || model.pages.find(p => p.type === 'upsell' && stepVariantFor(p) === v)
+      || (mainPage && findNextFunnelPage(model.pages, mainPage, v));
+    const visited = new Set();
+    while(current && !visited.has(current.id)){
+      visited.add(current.id);
+      chain.push(current);
+      // Popups are attached to their parent upsell and are part of that path.
+      model.pages.filter(p => p.isPopup && p.parentUpsellUrl === current.url)
+        .sort((a,b) => a.popupIndex - b.popupIndex)
+        .forEach(p => { if(!visited.has(p.id)){ visited.add(p.id); chain.push(p); } });
+      current = findNextFunnelPage(model.pages, current, v);
     }
 
     // Row wrapper — full width, horizontal chain
@@ -1413,8 +1439,8 @@ function syncSplitPageLabels(){
   if(!lastModel) return;
   lastModel.pages.forEach(p => { p.assignedLabel = null; });
   const sources = lastModel.pages.filter(p => p.splitByProduct && p.options.length >= 2);
-  const branchRoots = [];
-  // Resolve cascades from Main outward so a branch target can itself start a later split.
+  // Assign branch labels only to the page explicitly selected in each slot.
+  // Later unbranched pages remain shared and are reached in flow order.
   for(let pass = 0; pass < lastModel.pages.length; pass++){
     sources.forEach(source => {
       (source.buyTargetIds || []).forEach((targetId, i) => {
@@ -1425,36 +1451,9 @@ function syncSplitPageLabels(){
           variant: String.fromCharCode(97 + i)
         };
         target.assignedLabel = assignedLabel;
-        const existing = branchRoots.find(root => root.target === target && root.variant === assignedLabel.variant);
-        if(existing) existing.num = assignedLabel.num;
-        else branchRoots.push({target, variant:assignedLabel.variant, num:assignedLabel.num});
       });
     });
   }
-
-  // Renumber every later upsell in a branch from its branch entry, keeping its original label for display.
-  const rootVariants = new Map();
-  branchRoots.forEach(root => {
-    if(!rootVariants.has(root.target)) rootVariants.set(root.target, new Set());
-    rootVariants.get(root.target).add(root.variant);
-  });
-  branchRoots.forEach(root => {
-    let current = root.target;
-    let currentNum = root.num;
-    const visited = new Set();
-    while(current && !visited.has(current.id)){
-      visited.add(current.id);
-      const assignedVariant = current.assignedLabel?.variant;
-      if(assignedVariant && assignedVariant !== root.variant) break;
-      current.assignedLabel = {num:currentNum, variant:root.variant};
-      const next = findNextUpsellPage(lastModel.pages, current, root.variant);
-      if(!next) break;
-      const nextRootVariants = rootVariants.get(next);
-      if(nextRootVariants && !nextRootVariants.has(root.variant)) break;
-      current = next;
-      currentNum++;
-    }
-  });
 
   lastModel.pages.filter(p => p.isPopup).forEach(p => {
     const parent = lastModel.pages.find(u => u.type === 'upsell' && u.url === p.parentUpsellUrl);

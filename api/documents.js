@@ -174,6 +174,26 @@ async function saveDocument(body, res) {
   return send(res, 200, { id, documentName, fileName, shareToken, createdAt, updatedAt: now });
 }
 
+async function deleteDocument(id, res) {
+  if (!id || !/^[0-9a-f-]{36}$/i.test(id)) return send(res, 400, { error: 'Valid document id is required' });
+  const document = await findById(id, 'id,object_key');
+  if (!document) return send(res, 404, { error: 'Document not found' });
+
+  // Delete the R2 object first. If the database request fails, the row remains
+  // so this operation can be retried safely (S3 DeleteObject is idempotent).
+  await s3.send(new DeleteObjectCommand({ Bucket: R2_BUCKET, Key: document.object_key }));
+
+  const deleteUrl = new URL(TABLE_URL);
+  deleteUrl.searchParams.set('id', `eq.${id}`);
+  deleteUrl.searchParams.set('select', 'id');
+  const deleted = await dbRequest(deleteUrl, {
+    method: 'DELETE',
+    headers: { Prefer: 'return=representation' },
+  });
+  if (!deleted?.length) return send(res, 404, { error: 'Document record was not found during deletion' });
+  return send(res, 200, { deleted: true, id });
+}
+
 module.exports = async function handler(req, res) {
   const url = new URL(req.url, `https://${req.headers.host || 'localhost'}`);
   const action = url.searchParams.get('action') || '';
@@ -226,7 +246,11 @@ module.exports = async function handler(req, res) {
       return await saveDocument(getBody(req), res);
     }
 
-    res.setHeader('Allow', 'GET, POST');
+    if (req.method === 'DELETE' && action === 'delete') {
+      return await deleteDocument(url.searchParams.get('id'), res);
+    }
+
+    res.setHeader('Allow', 'GET, POST, DELETE');
     return send(res, 405, { error: 'Unsupported document action' });
   } catch (error) {
     console.error('Document API request failed:', error.message);
