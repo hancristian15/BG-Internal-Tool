@@ -162,10 +162,9 @@
   <div class="panel" id="savedDocumentsPanel">
     <h2>Saved documents</h2>
     <div class="doc-search-row">
-      <input type="text" id="documentSearch" placeholder="Search account ID or product name" autocomplete="off">
-      <button class="btn-ghost" onclick="searchSavedDocuments()">Search</button>
+      <input type="text" id="documentSearch" placeholder="Type an account ID prefix or product name" autocomplete="off">
     </div>
-    <div class="hint">Search saved funnel documents by account ID or product name.</div>
+    <div class="hint">Results update as you type. Numeric searches match account IDs that start with those digits; other searches match product names.</div>
     <div id="documentResults" class="doc-results"></div>
   </div>
 
@@ -194,7 +193,7 @@
     <div class="grid">
       <div class="field">
         <label for="accountId">Account ID * <span class="tip-icon" data-img="assets/accountid.png">?</span></label>
-        <input type="text" id="accountId" placeholder="e.g. 12665">
+        <input type="text" id="accountId" placeholder="e.g. 12665" inputmode="numeric" maxlength="5" pattern="[0-9]{5}" autocomplete="off">
       </div>
       <div class="field">
         <label for="productName">Product name * <span class="tip-icon" data-img="assets/offername.png">?</span></label>
@@ -630,8 +629,12 @@ function generate(){
   const splitToggle = document.getElementById('splitToggle');
     const splitFunnel = !!splitToggle?.classList.contains('on');
 
-  if(!accountId || !productName || !offerFlowRaw){
-    errorBox.innerHTML = '<div class="err">Account ID, product name, and the offer flow text are all required.</div>';
+  if(!/^\d{5}$/.test(accountId)){
+    errorBox.innerHTML = '<div class="err">Account ID must contain exactly 5 digits.</div>';
+    return false;
+  }
+  if(!productName || !offerFlowRaw){
+    errorBox.innerHTML = '<div class="err">Product name and the offer flow text are required.</div>';
     return false;
   }
 
@@ -806,17 +809,22 @@ function makeShareUrl(token){
   return share.toString();
 }
 
+let documentSearchTimer = null;
+let documentSearchSequence = 0;
+
 async function searchSavedDocuments(){
   const query = document.getElementById('documentSearch').value.trim();
   const results = document.getElementById('documentResults');
+  const requestSequence = ++documentSearchSequence;
   if(!query){ results.innerHTML = ''; return; }
   results.textContent = 'Searching…';
   try {
     const data = await apiJson(`/api/documents?action=search&q=${encodeURIComponent(query)}`);
+    if(requestSequence !== documentSearchSequence) return;
     if(!data.documents?.length){ results.innerHTML = '<div class="doc-status">No saved documents found.</div>'; return; }
     results.innerHTML = data.documents.map(doc => `<div class="doc-card"><div><div class="doc-card-title">${escapeHtml(doc.document_name)}</div><div class="doc-card-meta">Account ${escapeHtml(doc.account_id)} · ${escapeHtml(doc.product_name)} · Created ${formatDocumentDate(doc.created_at)}</div></div><div class="doc-card-actions"><a class="btn-ghost" href="${escapeHtml(makeShareUrl(doc.share_token))}" target="_blank" rel="noopener">Preview</a><button class="btn-primary" onclick="loadSavedDocument('${escapeHtml(doc.id)}')">Edit</button></div></div>`).join('');
   } catch(error) {
-    results.textContent = `Search failed: ${error.message}`;
+    if(requestSequence === documentSearchSequence) results.textContent = `Search failed: ${error.message}`;
   }
 }
 
@@ -881,7 +889,20 @@ async function loadSharedPreview(token){
 
 function initializeDocumentUi(){
   const search = document.getElementById('documentSearch');
-  search?.addEventListener('keydown', event => { if(event.key === 'Enter') searchSavedDocuments(); });
+  search?.addEventListener('input', () => {
+    documentSearchSequence += 1;
+    clearTimeout(documentSearchTimer);
+    if(!search.value.trim()){
+      document.getElementById('documentResults').innerHTML = '';
+      return;
+    }
+    documentSearchTimer = setTimeout(searchSavedDocuments, 250);
+  });
+  const accountId = document.getElementById('accountId');
+  accountId?.addEventListener('input', () => {
+    const digits = accountId.value.replace(/\D/g, '').slice(0, 5);
+    if(accountId.value !== digits) accountId.value = digits;
+  });
   document.getElementById('output')?.addEventListener('input', markDocumentDirty);
   const token = new URLSearchParams(window.location.search).get('share');
   if(token) loadSharedPreview(token);

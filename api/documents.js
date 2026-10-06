@@ -116,6 +116,9 @@ async function saveDocument(body, res) {
   if (!accountId || !productName || !output || !builderState || !products) {
     return send(res, 400, { error: 'Account, product, builder state, product variants, and output are required' });
   }
+  if (!/^\d{5}$/.test(accountId)) {
+    return send(res, 400, { error: 'Account ID must contain exactly 5 digits' });
+  }
   if (output.length > 500000 || JSON.stringify(builderState).length > 500000 || JSON.stringify(products).length > 200000) {
     return send(res, 413, { error: 'Document is too large' });
   }
@@ -189,10 +192,14 @@ module.exports = async function handler(req, res) {
       if (!query) return send(res, 200, { documents: [] });
       const safe = query.replace(/[,*()%_\\]/g, ' ').replace(/\s+/g, ' ').trim();
       const searchUrl = new URL(TABLE_URL);
-      searchUrl.searchParams.set('or', `(account_id.ilike.*${safe}*,product_name.ilike.*${safe}*)`);
+      if (/^\d+$/.test(safe)) {
+        searchUrl.searchParams.set('account_id', `like.${safe}*`);
+      } else {
+        searchUrl.searchParams.set('product_name', `ilike.*${safe}*`);
+      }
       searchUrl.searchParams.set('select', 'id,account_id,product_name,document_name,file_name,share_token,created_at,updated_at');
       searchUrl.searchParams.set('order', 'created_at.desc');
-      searchUrl.searchParams.set('limit', '50');
+      searchUrl.searchParams.set('limit', '1000');
       return send(res, 200, { documents: await dbRequest(searchUrl) });
     }
 
@@ -200,6 +207,7 @@ module.exports = async function handler(req, res) {
       const accountId = String(url.searchParams.get('accountId') || '').trim();
       const productName = String(url.searchParams.get('productName') || '').trim();
       if (!accountId || !productName) return send(res, 200, { documents: [] });
+      if (!/^\d{5}$/.test(accountId)) return send(res, 400, { error: 'Account ID must contain exactly 5 digits' });
       return send(res, 200, { documents: await findDuplicates(accountId, productName) });
     }
 
