@@ -1079,7 +1079,28 @@ function initializeDocumentUi(){
 initializeDocumentUi();
 
 function stepNumFor(p){ return p.assignedLabel ? p.assignedLabel.num : p.num; }
-function stepVariantFor(p){ return p.assignedLabel ? p.assignedLabel.variant : p.variant; }
+function stepVariantsFor(p){
+  if(p.assignedLabel){
+    if(Array.isArray(p.assignedLabel.variants)) return p.assignedLabel.variants;
+    return p.assignedLabel.variant ? [p.assignedLabel.variant] : [];
+  }
+  return p.variant ? [p.variant] : [];
+}
+function stepVariantFor(p){
+  const variants = stepVariantsFor(p);
+  return variants.length === 1 ? variants[0] : null;
+}
+function pageMatchesBranch(p, branch){
+  const variants = stepVariantsFor(p).filter(v => v !== 'pop');
+  if(Array.isArray(branch)) return !variants.length || branch.every(v => variants.includes(v));
+  return branch ? (!variants.length || variants.includes(branch)) : !variants.length;
+}
+function routeBranchesFor(p, fallbackPage = null){
+  const own = stepVariantsFor(p).filter(v => v !== 'pop');
+  if(own.length) return own.length === 1 ? own[0] : own;
+  const fallback = fallbackPage ? stepVariantsFor(fallbackPage).filter(v => v !== 'pop') : [];
+  return fallback.length > 1 ? fallback : (fallback[0] || null);
+}
 
 function findNextFunnelPage(pages, source, branch){
   const start = pages.indexOf(source);
@@ -1087,8 +1108,7 @@ function findNextFunnelPage(pages, source, branch){
   for(let i=start+1; i<pages.length; i++){
     const candidate = pages[i];
     if(!['upsell','downsell'].includes(candidate.type) || candidate.isPopup) continue;
-    const candidateBranch = stepVariantFor(candidate);
-    if(branch ? (candidateBranch === branch || !candidateBranch) : !candidateBranch) return candidate;
+    if(pageMatchesBranch(candidate, branch)) return candidate;
   }
   return null;
 }
@@ -1099,8 +1119,7 @@ function findNextUpsellPage(pages, source, branch){
   for(let i=start+1; i<pages.length; i++){
     const candidate = pages[i];
     if(candidate.type !== 'upsell' || candidate.isPopup) continue;
-    const candidateBranch = stepVariantFor(candidate);
-    if(branch ? (candidateBranch === branch || !candidateBranch) : !candidateBranch) return candidate;
+    if(pageMatchesBranch(candidate, branch)) return candidate;
   }
   return null;
 }
@@ -1108,8 +1127,7 @@ function findNextUpsellPage(pages, source, branch){
 function findNextDownsellPage(pages, branch){
   return pages.find(candidate => {
     if(candidate.type !== 'downsell' || candidate.isPopup) return false;
-    const candidateBranch = stepVariantFor(candidate);
-    return branch ? (candidateBranch === branch || !candidateBranch) : !candidateBranch;
+    return pageMatchesBranch(candidate, branch);
   }) || null;
 }
 
@@ -1137,8 +1155,8 @@ function codenameExplanation(p, index){
   let step;
   if(p.isPopup) step = `d${p.sourceDownsellNum || p.num}p${p.popupIndex || 1} (Downsell ${p.sourceDownsellNum || p.num}, popup ${p.popupIndex || 1})`;
   else if(p.type === 'main') step = 'no step suffix (Main page)';
-  else if(p.type === 'upsell') step = `u (Upsell${stepVariantFor(p) ? ` ${String(stepVariantFor(p)).toUpperCase()}` : ''})`;
-  else step = `d (Downsell${stepVariantFor(p) ? ` ${String(stepVariantFor(p)).toUpperCase()}` : ''})`;
+  else if(p.type === 'upsell') step = `u (Upsell${stepVariantsFor(p).filter(v => v !== 'pop').length ? ` ${stepVariantsFor(p).filter(v => v !== 'pop').join('/').toUpperCase()}` : ''})`;
+  else step = `d (Downsell${stepVariantsFor(p).filter(v => v !== 'pop').length ? ` ${stepVariantsFor(p).filter(v => v !== 'pop').join('/').toUpperCase()}` : ''})`;
   const formula = `${prefix} + ${quantity} + ${step} = ${code}`;
   return p.manualCodenames?.[index]
     ? `Manually edited: ${code}. Product: ${product}; pack/bottle count: ${quantity}. Standard pattern: ${formula}.`
@@ -1159,9 +1177,9 @@ function renderCodenameLegend(model){
 
 function labelFor(p){
   const num = stepNumFor(p);
-  const variant = stepVariantFor(p);
-  const isPopup = variant === 'pop';
-  const v = (!isPopup && variant) ? ` ${variant.toUpperCase()}` : '';
+  const variants = stepVariantsFor(p);
+  const isPopup = variants.includes('pop');
+  const v = (!isPopup && variants.length) ? ` ${variants.join('/').toUpperCase()}` : '';
   const popTag = isPopup ? ' (POP)' : '';
   if(p.type === 'main') return 'Main';
   if(p.type === 'upsell') return `Upsell ${num}${v}${popTag}`;
@@ -1205,6 +1223,7 @@ function appendChain(container, pages){
         const assignedTarget = p.buyTargetIds && p.buyTargetIds[i] ? lastModel.pages.find(q => q.id === p.buyTargetIds[i]) : null;
         const defaultTarget = pageForUrl(p.buyTargets && p.buyTargets[i] || p.buyTarget);
         const target = assignedTarget || defaultTarget;
+        slot.title = 'The same Upsell page can be assigned to multiple product options.';
         slot.innerHTML = `<span>${count} ${count === 1 ? 'Bottle' : 'Bottles'} · ${letter}</span><span class="target-name">${target ? labelFor(target) : 'Drop an Upsell here'}</span>${target && target.originalLabel && target.originalLabel !== labelFor(target) ? `<span class="old-label">(old ${target.originalLabel})</span>` : ''}`;
         slot.addEventListener('dragover', e => { e.preventDefault(); slot.classList.add('drag-over'); });
         slot.addEventListener('dragleave', () => slot.classList.remove('drag-over'));
@@ -1233,7 +1252,7 @@ function renderFlow(model, splitFunnel){
   box.innerHTML = '';
 
   // 'pop' is not a letter-branch variant — exclude it from split display
-  const hasVariants = model.pages.some(p => { const v = stepVariantFor(p); return v && v !== 'pop'; });
+  const hasVariants = model.pages.some(p => stepVariantsFor(p).some(v => v !== 'pop'));
   const hasProductSplit = model.pages.some(p => p.splitByProduct && p.options.length >= 2);
 
   if((!splitFunnel && !hasProductSplit) || !hasVariants){
@@ -1250,7 +1269,7 @@ function renderFlow(model, splitFunnel){
   const mainPage   = model.pages.find(p => p.type === 'main');
   // Only letter variants (a, b, c…) — never 'pop'
   const variants   = [...new Set(
-    model.pages.filter(p => { const v = stepVariantFor(p); return v && v !== 'pop'; }).map(stepVariantFor)
+    model.pages.flatMap(p => stepVariantsFor(p).filter(v => v !== 'pop'))
   )].sort();
   variants.forEach((v, vi) => {
     const chain = [];
@@ -1442,16 +1461,23 @@ function syncSplitPageLabels(){
   // Assign branch labels only to the page explicitly selected in each slot.
   // Later unbranched pages remain shared and are reached in flow order.
   for(let pass = 0; pass < lastModel.pages.length; pass++){
+    const assignments = new Map();
     sources.forEach(source => {
       (source.buyTargetIds || []).forEach((targetId, i) => {
         const target = targetId && lastModel.pages.find(p => p.id === targetId);
         if(!target || target.type !== 'upsell') return;
-        const assignedLabel = {
+        const assignment = assignments.get(target.id) || {
+          target,
           num: source.type === 'main' ? 1 : stepNumFor(source) + 1,
-          variant: String.fromCharCode(97 + i)
+          variants: new Set()
         };
-        target.assignedLabel = assignedLabel;
+        assignment.variants.add(String.fromCharCode(97 + i));
+        assignments.set(target.id, assignment);
       });
+    });
+    assignments.forEach(({target, num, variants}) => {
+      const list = [...variants].sort();
+      target.assignedLabel = {num, variants:list, variant:list.length === 1 ? list[0] : null};
     });
   }
 
@@ -1469,7 +1495,7 @@ function refreshBranchBuyTargets(){
     const parent = p.type === 'downsell'
       ? lastModel.pages.find(u => u.type === 'upsell' && u.url === p.parentUpsellUrl)
       : null;
-    const branch = stepVariantFor(p) || (parent && stepVariantFor(parent)) || null;
+    const branch = routeBranchesFor(p, parent);
     const nextPage = findNextFunnelPage(lastModel.pages, p, branch);
     const nextDeclinePage = findNextNoThanksPage(lastModel.pages, p, branch);
     const nextUpsell = p.type === 'upsell'
@@ -1501,7 +1527,7 @@ function refreshBranchBuyTargets(){
   });
   lastModel.pages.filter(p => p.isPopup).forEach(p => {
     const parent = lastModel.pages.find(u => u.type === 'upsell' && u.url === p.parentUpsellUrl);
-    const branch = parent ? stepVariantFor(parent) : stepVariantFor(p);
+    const branch = routeBranchesFor(p, parent);
     const nextUpsell = findNextUpsellPage(lastModel.pages, p, branch);
     const nextPopup = lastModel.pages.find(q => q.isPopup && q.parentUpsellUrl === p.parentUpsellUrl && q.popupIndex === p.popupIndex + 1);
     const nextPage = findNextNoThanksPage(lastModel.pages, p, branch);
@@ -1522,25 +1548,11 @@ function setProductSplitDestination(sourceId, optionIndex, targetId){
   if(!source || !target || target.type !== 'upsell' || source.id === target.id) return;
   if(!source.splitByProduct || source.options.length < 2) return;
 
-  // If the destination is already in another product slot, swap the two pages.
-  let swapped = null;
-  lastModel.pages.some(other => {
-    if(!other.splitByProduct || !other.buyTargetIds) return false;
-    const otherIndex = other.buyTargetIds.findIndex((id, i) => id === target.id && !(other.id === source.id && i === optionIndex));
-    if(otherIndex < 0) return false;
-    swapped = {page: other, index: otherIndex};
-    return true;
-  });
+  // Multiple product options may intentionally share the same upsell page.
   source.buyTargetIds = source.buyTargetIds || source.options.map(() => null);
   source.buyTargets = source.buyTargets || source.options.map(() => source.buyTarget || lastModel.thankYouUrl);
-  const priorId = source.buyTargetIds[optionIndex];
-  const priorPage = priorId && lastModel.pages.find(p => p.id === priorId);
   source.buyTargetIds[optionIndex] = target.id;
   source.buyTargets[optionIndex] = target.url;
-  if(swapped){
-    swapped.page.buyTargetIds[swapped.index] = priorId || null;
-    swapped.page.buyTargets[swapped.index] = priorPage ? priorPage.url : (swapped.page.splitFallbackTargets?.[swapped.index] || swapped.page.splitFallbackTarget || lastModel.thankYouUrl);
-  }
   source.buyTarget = source.buyTargets[0] || lastModel.thankYouUrl;
   syncSplitPageLabels();
   renderFlow(lastModel, lastSettings.splitFunnel);
