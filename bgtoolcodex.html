@@ -1188,8 +1188,8 @@ function labelFor(p){
 }
 
 // Helper: renders a chain of page nodes + arrows + thank-you into any container
-function appendChain(container, pages){
-  pages.forEach(p => {
+function appendChain(container, pages, includeThankYou = true){
+  pages.forEach((p, pageIndex) => {
     const node = document.createElement('div');
     node.className = `node ${p.type}`;
     node.draggable = true;
@@ -1232,12 +1232,14 @@ function appendChain(container, pages){
       });
       container.appendChild(split);
     }
-    const arrow = document.createElement('span');
-    arrow.className = 'arrow';
-    arrow.textContent = '→';
-    container.appendChild(arrow);
+    if(pageIndex < pages.length - 1 || includeThankYou){
+      const arrow = document.createElement('span');
+      arrow.className = 'arrow';
+      arrow.textContent = '→';
+      container.appendChild(arrow);
+    }
   });
-  if(pages.length){
+  if(includeThankYou && pages.length){
     const last = pages[pages.length - 1];
     const ty = document.createElement('div');
     ty.className = 'node';
@@ -1262,8 +1264,8 @@ function renderFlow(model, splitFunnel){
     return;
   }
 
-  // Split mode: render the actual route for each branch, starting at the
-  // destination selected for that product and following shared pages in order.
+  // Split mode: render the actual route for each branch, starting at its
+  // selected destination and following shared pages in order.
   box.style.cssText = 'display:flex;flex-direction:column;flex-wrap:nowrap;gap:0;align-items:stretch;';
 
   const mainPage   = model.pages.find(p => p.type === 'main');
@@ -1271,14 +1273,15 @@ function renderFlow(model, splitFunnel){
   const variants   = [...new Set(
     model.pages.flatMap(p => stepVariantsFor(p).filter(v => v !== 'pop'))
   )].sort();
-  variants.forEach((v, vi) => {
+  const routeGroups = new Map();
+  variants.forEach(v => {
     const chain = [];
-    if(mainPage) chain.push(mainPage);
-    const targetId = mainPage?.buyTargetIds?.[vi];
-    const targetUrl = mainPage?.buyTargets?.[vi];
+    const optionIndex = v.charCodeAt(0) - 97;
+    const targetId = mainPage?.buyTargetIds?.[optionIndex];
+    const targetUrl = mainPage?.buyTargets?.[optionIndex];
     let current = (targetId && model.pages.find(p => p.id === targetId))
       || (targetUrl && model.pages.find(p => p.type === 'upsell' && p.url === targetUrl))
-      || model.pages.find(p => p.type === 'upsell' && stepVariantFor(p) === v)
+      || model.pages.find(p => p.type === 'upsell' && stepVariantsFor(p).includes(v))
       || (mainPage && findNextFunnelPage(model.pages, mainPage, v));
     const visited = new Set();
     while(current && !visited.has(current.id)){
@@ -1290,8 +1293,26 @@ function renderFlow(model, splitFunnel){
         .forEach(p => { if(!visited.has(p.id)){ visited.add(p.id); chain.push(p); } });
       current = findNextFunnelPage(model.pages, current, v);
     }
+    const signature = chain.map(p => p.id).join('|');
+    const group = routeGroups.get(signature) || {branches:[], chain};
+    group.branches.push(v);
+    routeGroups.set(signature, group);
+  });
 
-    // Row wrapper — full width, horizontal chain
+  if(mainPage){
+    const entry = document.createElement('div');
+    entry.style.cssText = 'display:flex;align-items:center;flex-wrap:wrap;gap:0;width:100%;padding:10px 0;border-bottom:1px solid var(--line);';
+    const label = document.createElement('div');
+    label.className = 'flow-branch-label';
+    label.textContent = 'Entry';
+    entry.appendChild(label);
+    appendChain(entry, [mainPage], false);
+    box.appendChild(entry);
+  }
+
+  [...routeGroups.values()].forEach((group, groupIndex, allGroups) => {
+    // Identical routes are shown once and labelled with every branch that
+    // shares them, while branches with different paths remain separate.
     const row = document.createElement('div');
     row.style.cssText = [
       'display:flex',
@@ -1300,16 +1321,16 @@ function renderFlow(model, splitFunnel){
       'gap:0',
       'width:100%',
       'padding:10px 0',
-      vi < variants.length - 1 ? 'border-bottom:1px solid var(--line)' : ''
+      groupIndex < allGroups.length - 1 ? 'border-bottom:1px solid var(--line)' : ''
     ].filter(Boolean).join(';') + ';';
 
     // Branch label badge
     const lbl = document.createElement('div');
     lbl.className = 'flow-branch-label';
-    lbl.textContent = `Branch ${v.toUpperCase()}`;
+    lbl.textContent = `Branch ${group.branches.map(v => v.toUpperCase()).join('/')}`;
     row.appendChild(lbl);
 
-    appendChain(row, chain);
+    appendChain(row, group.chain);
     box.appendChild(row);
   });
 }
@@ -1502,7 +1523,18 @@ function syncSplitPageLabels(){
           let next = null;
           for(let i = start + 1; i < lastModel.pages.length; i++){
             const candidate = lastModel.pages[i];
-            if(candidate.type !== 'upsell' || candidate.isPopup) continue;
+            if(candidate.isPopup) continue;
+            if(candidate.type === 'downsell'){
+              const memberships = candidate.variant ? [candidate.variant] : [];
+              if(!memberships.length || memberships.includes(variant)){
+                const parent = lastModel.pages.find(p => p.type === 'upsell' && p.url === candidate.parentUpsellUrl);
+                const originalParentNum = parent?.originalNum ?? parent?.num ?? current.originalNum ?? current.num;
+                const originalDownsellNum = candidate.originalNum ?? candidate.num;
+                addPathLabel(candidate, originalDownsellNum + currentNum - originalParentNum, variant);
+              }
+              continue;
+            }
+            if(candidate.type !== 'upsell') continue;
             const explicit = assignments.get(candidate.id);
             const memberships = explicit ? [...explicit.variants] : (candidate.variant ? [candidate.variant] : []);
             if(!memberships.length || memberships.includes(variant)) { next = candidate; break; }
