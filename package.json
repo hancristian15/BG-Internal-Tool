@@ -1,1 +1,11 @@
-YªçŠx-®éÜj×¢ëiºÚ+Š§j[h‘éÜ¢éíëTèµ©hºÚn¶X§zÍ^Âˆ›˜[­¢G§²ÚîÆ­yÒĞ§Ğ
+{
+  "name": "buygoods-funnel-builder",
+  "private": true,
+  "version": "1.0.0",
+  "engines": {
+    "node": ">=20"
+  },
+  "dependencies": {
+    "@aws-sdk/client-s3": "^3.0.0"
+  }
+}

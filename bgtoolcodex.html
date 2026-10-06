@@ -1,1 +1,1547 @@
-Y��x-���jם��i��+��j[h��ܢ��۽��:-jZ.����)޳S�D�5E�۽���$z{-���jםl>
+<!DOCTYPE html>
+<html lang="ro">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Funnel Builder — BuyGoods</title>
+<style>
+  :root{
+    --bg:#13151a;
+    --panel:#1b1e26;
+    --panel-2:#21252f;
+    --line:#2c303c;
+    --text:#e7e9ee;
+    --muted:#8b90a0;
+    --amber:#e8b339;
+    --lime:#9fd356;
+    --red:#e8616a;
+    --mono: "IBM Plex Mono", "SFMono-Regular", Consolas, monospace;
+    --sans: "Space Grotesk", "Inter", system-ui, sans-serif;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    background:var(--bg);
+    color:var(--text);
+    font-family:var(--sans);
+    line-height:1.5;
+  }
+  @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap');
+
+  .wrap{max-width:1040px;margin:0 auto;padding:40px 24px 80px;}
+  header{margin-bottom:32px;border-bottom:1px solid var(--line);padding-bottom:24px;}
+  header .tag{font-family:var(--mono);font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:var(--amber);}
+  header h1{font-size:28px;margin:8px 0 6px;font-weight:700;}
+  header p{color:var(--muted);margin:0;max-width:620px;font-size:14px;}
+
+  .panel{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:22px;margin-bottom:20px;}
+  .panel h2{font-size:13px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin:0 0 16px;font-weight:600;}
+
+  .grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;}
+  @media (max-width:680px){.grid{grid-template-columns:1fr;}}
+
+  label{display:block;font-size:12px;color:var(--muted);margin-bottom:6px;font-family:var(--mono);}
+  input[type=text]{
+    width:100%;background:var(--panel-2);border:1px solid var(--line);border-radius:6px;
+    color:var(--text);padding:10px 12px;font-family:var(--mono);font-size:13px;
+  }
+  input[type=text]:focus{outline:none;border-color:var(--amber);}
+  textarea{
+    width:100%;min-height:230px;background:var(--panel-2);border:1px solid var(--line);border-radius:6px;
+    color:var(--text);padding:14px;font-family:var(--mono);font-size:12.5px;resize:vertical;line-height:1.6;
+  }
+  textarea:focus{outline:none;border-color:var(--amber);}
+  .field{margin-bottom:14px;}
+  .hint{font-size:11.5px;color:var(--muted);margin-top:6px;}
+
+  button{
+    font-family:var(--sans);font-weight:600;font-size:14px;border:none;border-radius:7px;
+    padding:12px 20px;cursor:pointer;transition:transform .08s ease, opacity .15s ease;
+  }
+  button:active{transform:scale(.98);}
+  .btn-primary{background:var(--amber);color:#1a1407;}
+  .btn-primary:hover{opacity:.9;}
+  .btn-ghost{background:transparent;border:1px solid var(--line);color:var(--text);}
+  .btn-ghost:hover{border-color:var(--amber);color:var(--amber);}
+  .actions{display:flex;gap:10px;align-items:center;margin-top:18px;}
+
+  #flowBox{display:flex;flex-wrap:wrap;gap:0;align-items:center;}
+  .node{
+    font-family:var(--mono);font-size:12px;border:1px solid var(--line);background:var(--panel-2);
+    border-radius:8px;padding:10px 14px;display:flex;flex-direction:column;gap:2px;min-width:120px;
+  }
+  .node .t{color:var(--muted);font-size:10px;text-transform:uppercase;letter-spacing:.08em;}
+  .node[draggable="true"]{cursor:grab;user-select:none;}
+  .node.dragging{opacity:.45;}
+  .node.drag-over{outline:2px dashed var(--amber);outline-offset:2px;}
+  .old-label{color:var(--muted);font-size:10px;text-transform:none;letter-spacing:0;margin-top:2px;}
+  .flow-plus{padding:2px 7px;background:rgba(232,179,57,.12);border:1px solid rgba(232,179,57,.35);color:var(--amber);border-radius:5px;font-size:12px;line-height:1.2;align-self:flex-start;margin-top:5px;}
+  .flow-plus:hover{background:var(--amber);color:#1a1407;}
+  .flow-plus:disabled{opacity:.35;cursor:not-allowed;background:var(--panel-2);color:var(--muted);}
+  .route-label{font-size:9px;color:var(--muted);line-height:1.3;margin-top:3px;white-space:normal;max-width:210px;}
+  .product-split{display:flex;flex-direction:column;gap:4px;padding:6px;margin:4px 8px;min-width:155px;background:rgba(232,179,57,.04);border:1px dashed rgba(232,179,57,.4);border-radius:6px;align-self:center;}
+  .product-drop-slot{font-family:var(--mono);font-size:10px;color:var(--muted);padding:6px 8px;border:1px dashed var(--line);border-radius:4px;min-width:135px;}
+  .product-drop-slot.drag-over{border-color:var(--amber);background:rgba(232,179,57,.12);color:var(--text);}
+  .product-drop-slot .target-name{color:var(--lime);margin-left:4px;}
+  .node.main{border-color:var(--lime);}
+  .node.upsell{border-color:var(--amber);}
+  .node.downsell{border-color:var(--red);}
+  .arrow{color:var(--muted);padding:0 8px;font-size:14px;}
+  .branch{display:flex;flex-direction:column;align-items:center;}
+  .branch .lbl{font-size:10px;color:var(--muted);margin:2px 0;}
+  .flow-branch-label{
+    font-family:var(--mono);font-size:10px;font-weight:700;color:var(--amber);
+    background:rgba(232,179,57,.1);border:1px solid rgba(232,179,57,.25);border-radius:4px;
+    padding:5px 10px;white-space:nowrap;margin-right:10px;letter-spacing:.1em;
+    text-transform:uppercase;align-self:center;flex-shrink:0;
+  }
+
+  table{width:100%;border-collapse:collapse;font-family:var(--mono);font-size:12px;}
+  th,td{border-bottom:1px solid var(--line);padding:8px 6px;text-align:left;vertical-align:top;}
+  th{color:var(--muted);font-weight:500;text-transform:uppercase;font-size:10.5px;letter-spacing:.06em;}
+  td.url{max-width:260px;word-break:break-all;color:var(--muted);}
+  .codes span{display:inline-block;background:var(--panel-2);border:1px solid var(--line);border-radius:4px;padding:2px 6px;margin:2px 3px 2px 0;}
+  .codes .codename-editable{cursor:text;}
+  .codes .codename-editable:hover{border-color:var(--amber);color:var(--amber);}
+  .codename-legend{margin-top:18px;padding-top:14px;border-top:1px solid var(--line);font-size:11px;color:var(--muted);}
+  .codename-legend-title{color:var(--text);font-size:12px;font-weight:700;margin-bottom:5px;}
+  .codename-legend-formula{line-height:1.6;margin-bottom:10px;}
+  .codename-legend-list{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:5px 14px;}
+  .codename-legend-row{display:flex;align-items:baseline;gap:8px;min-width:0;}
+  .codename-legend-row code{color:var(--amber);white-space:nowrap;}
+  .codename-legend-row span{overflow-wrap:anywhere;}
+
+  #output{white-space:pre;overflow-x:auto;background:var(--panel-2);border:1px solid var(--line);border-radius:6px;padding:16px;font-family:var(--mono);font-size:11.5px;max-height:520px;overflow-y:auto;outline:none;cursor:text;}
+  .output-hint{font-size:11px;color:var(--muted);margin-bottom:8px;font-family:var(--mono);}  
+  .tip-icon{display:inline-flex;align-items:center;justify-content:center;width:14px;height:14px;border-radius:50%;background:rgba(139,144,160,.35);color:var(--text);font-size:9px;font-weight:700;cursor:help;vertical-align:middle;margin-left:5px;flex-shrink:0;font-family:var(--sans);line-height:1;border:1px solid rgba(139,144,160,.3);transition:background .15s;}
+  .tip-icon:hover{background:var(--amber);color:#1a1407;border-color:var(--amber);}
+  #tip-popup{position:fixed;z-index:9999;border:1px solid var(--line);border-radius:8px;background:var(--panel);padding:6px;display:none;pointer-events:none;box-shadow:0 8px 24px rgba(0,0,0,.55);}
+  #tip-popup img{display:block;max-width:260px;max-height:180px;border-radius:4px;}
+  .empty{color:var(--muted);font-size:13px;padding:30px 0;text-align:center;}
+  .copied{color:var(--lime);font-size:12px;margin-left:10px;font-family:var(--mono);}
+  .err{background:#2a1a1c;border:1px solid var(--red);color:#ffb3b8;border-radius:6px;padding:12px 14px;font-size:13px;margin-bottom:16px;}
+  .doc-search-row{display:flex;gap:10px;align-items:center;}
+  .doc-search-row input{flex:1;min-width:160px;}
+  .doc-results{display:grid;gap:8px;margin-top:12px;}
+  .doc-card{display:flex;justify-content:space-between;align-items:center;gap:14px;padding:12px;background:var(--panel-2);border:1px solid var(--line);border-radius:7px;}
+  .doc-card-title{font-family:var(--mono);font-size:12px;}
+  .doc-card-meta,.doc-status{font-size:11px;color:var(--muted);margin-top:4px;}
+  .doc-card-actions{display:flex;gap:7px;flex-shrink:0;}
+  .doc-card-actions button,.doc-card-actions a{font-size:11px;padding:7px 10px;text-decoration:none;}
+  .sku-input{display:block;width:112px;margin:5px 0 2px;background:var(--panel-2);border:1px solid var(--line);border-radius:4px;color:var(--text);padding:5px 7px;font-family:var(--mono);font-size:10px;}
+  .doc-status a{color:var(--lime);}
+  .modal-backdrop{position:fixed;inset:0;z-index:10000;background:rgba(0,0,0,.72);display:flex;align-items:center;justify-content:center;padding:20px;}
+  .modal{width:min(560px,100%);background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:22px;box-shadow:0 18px 60px rgba(0,0,0,.5);}
+  .modal h2{margin:0 0 8px;color:var(--text);}
+  .modal p{color:var(--muted);font-size:13px;}
+  .modal-actions{display:flex;gap:9px;justify-content:flex-end;flex-wrap:wrap;margin-top:18px;}
+  .shared-output{white-space:pre-wrap;overflow-wrap:anywhere;background:var(--panel-2);border:1px solid var(--line);border-radius:6px;padding:16px;font-family:var(--mono);font-size:11.5px;max-height:70vh;overflow:auto;}
+  @media(max-width:600px){.doc-search-row,.doc-card{align-items:stretch;flex-direction:column}.doc-card-actions{justify-content:flex-start}}
+  select{
+    width:100%;background:var(--panel-2);border:1px solid var(--line);border-radius:6px;
+    color:var(--text);padding:10px 12px;font-family:var(--mono);font-size:13px;cursor:pointer;
+  }
+  select:focus{outline:none;border-color:var(--amber);}
+  .toggle-btn{
+    font-family:var(--mono);font-size:12px;font-weight:600;padding:9px 16px;border-radius:6px;
+    cursor:pointer;border:1px solid var(--line);background:var(--panel-2);color:var(--muted);
+    transition:all .15s ease;letter-spacing:.04em;
+  }
+  .toggle-btn.on{background:var(--amber);color:#1a1407;border-color:var(--amber);}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header>
+    <div class="tag">// internal tool</div>
+    <h1>BuyGoods Funnel Builder</h1>
+    <p>Paste an offer flow (Main page / Upsell N / Downsell N + URLs + pack pricing), set the account ID and product name, and get back tracking scripts, conversion iframes, and buy links for every step — formatted like the integration doc.</p>
+  </header>
+
+  <div class="panel" id="savedDocumentsPanel">
+    <h2>Saved documents</h2>
+    <div class="doc-search-row">
+      <input type="text" id="documentSearch" placeholder="Search account ID or product name" autocomplete="off">
+      <button class="btn-ghost" onclick="searchSavedDocuments()">Search</button>
+    </div>
+    <div class="hint">Search saved funnel documents by account ID or product name.</div>
+    <div id="documentResults" class="doc-results"></div>
+  </div>
+
+  <div class="panel" id="sharedPreviewPanel" style="display:none;">
+    <h2>Shared document preview</h2>
+    <div id="sharedDocumentMeta" class="doc-status"></div>
+    <div class="actions"><button class="btn-ghost" onclick="copyShareLink()">Copy share URL</button></div>
+    <pre id="sharedDocumentOutput" class="shared-output"></pre>
+  </div>
+
+  <div class="modal-backdrop" id="duplicateModal" style="display:none;">
+    <div class="modal" role="dialog" aria-modal="true" aria-labelledby="duplicateTitle">
+      <h2 id="duplicateTitle">Document already saved</h2>
+      <p id="duplicateMessage"></p>
+      <div id="duplicateChoices"></div>
+      <div class="modal-actions">
+        <button class="btn-ghost" onclick="closeDuplicateDialog()">Cancel</button>
+        <button class="btn-ghost" onclick="saveCurrentAsSecondDocument()">Save this as a second document</button>
+        <button class="btn-primary" onclick="editExistingDuplicate()">Open existing to edit</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="panel">
+    <h2>Setup</h2>
+    <div class="grid">
+      <div class="field">
+        <label for="accountId">Account ID * <span class="tip-icon" data-img="assets/accountid.png">?</span></label>
+        <input type="text" id="accountId" placeholder="e.g. 12665">
+      </div>
+      <div class="field">
+        <label for="productName">Product name * <span class="tip-icon" data-img="assets/offername.png">?</span></label>
+        <input type="text" id="productName" placeholder="e.g. RetraSlim">
+        <div class="hint">First 3 letters → codename prefix (e.g. "RetraSlim" → ret). Used as fallback if the offer flow text doesn't specify a product name per page — if it does (e.g. "GlucoVital - 6 packs…"), that name takes priority.</div>
+      </div>
+      <div class="field">
+        <label for="token">Affiliate token (iframe "t" param) — optional <span class="tip-icon" data-img="assets/afftoken.png">?</span></label>
+        <input type="text" id="token" placeholder="aa90d7127be44d23c555a7ba130fd20a">
+        <div class="hint">Leave blank to insert a placeholder you can fill in later.</div>
+      </div>
+      <div class="field">
+        <label for="thankYou">Thank you page URL — optional </label>
+        <input type="text" id="thankYou" placeholder="https://yourdomain.com/thank-you/">
+        <div class="hint">Leave blank to default to https://buygoods.com/thankyou?account_id=YOUR_ACCOUNT_ID</div>
+      </div>
+      <div class="field">
+        <label for="lang">Language (lang= param in buy links) <span class="tip-icon" data-img="assets/lang.png">?</span></label>
+        <select id="lang">
+          <option value="en">en — English</option>
+          <option value="fr">fr — French</option>
+          <option value="de">de — German</option>
+          <option value="es">es — Spanish</option>
+          <option value="pt">pt — Portuguese</option>
+        </select>
+      </div>
+      <div class="field" style="display:flex;align-items:flex-end;padding-bottom:2px;">
+      <div style="display:none;">
+          <label style="margin-bottom:8px;">Split funnel mode</label>
+          <button class="toggle-btn" id="splitToggle" onclick="toggleSplit()">Split Funnel: OFF</button>
+          <div class="hint" style="margin-top:8px;">When ON, use letter suffixes in labels: "Upsell 1 a" routes buyers of option 1, "Upsell 1 b" routes buyers of option 2, etc. The main page buy links will then redirect each product to its own variant branch.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="panel">
+    <h2>Offer flow (paste here) <span class="tip-icon" data-img="assets/flow.png">?</span></h2>
+    <div class="field">
+      <textarea id="offerFlow" placeholder="Main page: https://retraslim.app/index?f=89s6iw&fnid=54&pfnid=1
+(RetraSlim - 2 packs for $158 - $79 each, 3 packs for $207 - $69 each, 6 packs for $294 - $49 each)
+
+Upsell 1: https://retraslim.app/orderup1-v2?f=89s6iw&fnid=9&pfnid=7
+(RetraSlim - 4 packs for $196 - $49 each + 2 FREE packs)
+
+Upsell 2: https://retraslim.app/orderup1-v1?f=89s6iw&fnid=39&pfnid=37
+(RetraSlim - 6 packs for $294 - $49 each + 3 FREE packs)
+
+Downsell 1: https://retraslim.app/orderdw1-v1?f=89s6iw&fnid=19&pfnid=17
+(RetraSlim - 3 packs for $147 - $49 each + 3 FREE packs)"></textarea>
+      <div class="hint">Paste the compliance document here. No changes needed! </div>
+    </div>
+    <div class="actions">
+      <button class="btn-primary" onclick="handleGenerateClick()">Generate funnel</button>
+      <button class="btn-ghost" onclick="loadSample()">Load sample</button>
+    </div>
+  </div>
+
+  <div id="errorBox"></div>
+
+  <div class="panel" id="flowPanel" style="display:none;">
+    <h2>Resolved flow</h2>
+    <div id="flowBox"></div>
+    <div id="codenameLegend" class="codename-legend" style="display:none;"></div>
+  </div>
+
+  <div class="panel" id="tablePanel" style="display:none;">
+    <h2>Parsed pages &amp; codenames</h2>
+    <table id="pageTable"></table>
+  </div>
+
+  <div class="panel" id="outputPanel" style="display:none;">
+    <h2>Generated output</h2>
+    <div class="actions" style="margin-top:0;margin-bottom:14px;">
+      <button class="btn-ghost" onclick="copyOutput()">Copy to clipboard</button>
+      <button class="btn-ghost" onclick="downloadOutput()">Download .txt</button>
+      <button class="btn-ghost" id="saveDocumentButton" onclick="saveDocumentChanges()" style="display:none;">Save changes</button>
+      <span id="copiedMsg" class="copied" style="display:none;">Copied ✓</span>
+    </div>
+    <div id="documentSaveStatus" class="doc-status"></div>
+    <div class="output-hint">✏ Output is editable — click to modify before copying or downloading.</div><div id="output" contenteditable="true" spellcheck="false"></div>
+  </div>
+
+  <div class="panel" id="emptyPanel">
+    <div class="empty">Nothing generated yet. Fill in the setup fields, paste your offer flow, and click "Generate funnel".</div>
+  </div>
+
+</div>
+
+<script>
+let lastModel = null;
+let lastOutput = "";
+let lastSettings = null;
+let editingDocumentId = null;
+let pendingDuplicateDocuments = [];
+let pendingDocumentContext = null;
+async function recordGenerateClick(){
+  try {
+    const response = await fetch('/api/generate-clicks', {method:'POST'});
+    if(!response.ok) throw new Error(`Click logging failed (${response.status})`);
+    return await response.json();
+  } catch(error) {
+    console.error('Could not store this Generate funnel click:', error);
+    return null;
+  }
+}
+
+// In the browser console run getclicks() to fetch the all-time total from Supabase.
+window.getclicks = async function getclicks(){
+  const response = await fetch('/api/generate-clicks', {cache:'no-store'});
+  if(!response.ok) throw new Error(`Could not read click total (${response.status})`);
+  const {total} = await response.json();
+  console.log(`Generate funnel clicks: ${total}`);
+  return total;
+};
+
+const ALPHA = 'abcdefghijklmnopqrstuvwxyz'.split('');
+
+function loadSample(){
+  document.getElementById('accountId').value = "12665";
+  document.getElementById('productName').value = "RetraSlim";
+  document.getElementById('offerFlow').value = document.getElementById('offerFlow').placeholder;
+}
+
+function toggleSplit(){
+  const btn = document.getElementById('splitToggle');
+  btn.classList.toggle('on');
+  btn.textContent = btn.classList.contains('on') ? 'Split Funnel: ON' : 'Split Funnel: OFF';
+}
+
+function b64(str){
+  try{ return btoa(unescape(encodeURIComponent(str))); }
+  catch(e){ return btoa(str); }
+}
+
+function cleanText(raw){
+  return raw
+    .replace(/\*\*/g, '')
+    .replace(/\[\s*\]\(([^)]+)\)/g, '')
+    .replace(/\[([^\]]+)\]\(([^)]+)\)/g, '$1 $2');
+}
+
+function extractUrl(block){
+  const m = block.match(/https?:\/\/[^\s\)\]\*"'<>]+/);
+  return m ? m[0] : null;
+}
+
+function extractProductName(block){
+  // Ignore URLs and generic popup labels so link text cannot become a product name.
+  const text = block.replace(/https?:\/\/[^\s\)\]<>"']+/g, ' ');
+  const re = /\(?\s*([A-Za-z][A-Za-z0-9 \t\-]{1,30}?)\s*-\s*\d+\s*(?:packs?|bottles?)/gi;
+  const names = [];
+  let m;
+  while((m = re.exec(text)) !== null){
+    const name = m[1].trim();
+    if(name.length > 1 && !/^(?:pop(?:\s*up)?|popup|downsell)$/i.test(name) && !names.some(n => n.toLowerCase() === name.toLowerCase())) names.push(name);
+  }
+  if(names.length > 1) return 'box'; // multiple distinct products → bundle/box prefix
+  return names[0] || null;
+}
+
+function extractPackCounts(block){
+  block = block.replace(/https?:\/\/[^\s\)\]<>"']+/g, ' ');
+  const counts = [];
+  const re = /(\d+)\s*(?:packs?|bottles?)\s+for\s+\$?[\d.]+/gi;
+  let m;
+  while((m = re.exec(block)) !== null){
+    const n = parseInt(m[1], 10);
+    if(n > 0 && !counts.includes(n)) counts.push(n);
+  }
+  if(counts.length === 0){
+    const re2 = /(\+\s*)?(\d+)\s*(?:packs?|bottles?)(?!\s*FREE)/gi;
+    while((m = re2.exec(block)) !== null){
+      if(m[1]) continue;
+      const n = parseInt(m[2], 10);
+      if(n > 0 && !counts.includes(n)) counts.push(n);
+    }
+  }
+  return counts.sort((a,b)=>a-b);
+}
+
+function parseOfferFlow(rawText){
+  const text = cleanText(rawText);
+  // Capture standard steps, letter variants, and explicit popup children.
+  const labelRe = /\b(Main\s*page|Upsell\s+\d+(?:\s+(?:[a-z]|pop))?|Downsell\s+\d+(?:\s+(?:[a-z]|pop(?:\s+\d+)?))?)\s*:/gi;
+  const matches = [];
+  let m;
+  while((m = labelRe.exec(text)) !== null){
+    matches.push({label: m[1], index: m.index, end: m.index + m[0].length});
+  }
+  if(matches.length === 0) return [];
+
+  const pages = [];
+  let currentUpsell = null;
+  let currentTrackingPageUrl = null;
+  let nextPopupIndex = 1;
+  for(let i=0; i<matches.length; i++){
+    const start = matches[i].end;
+    const stop = (i+1 < matches.length) ? matches[i+1].index : text.length;
+    const block = text.slice(start, stop);
+    const labelRaw = matches[i].label.toLowerCase().replace(/\s+/g,' ').trim();
+    const parts = labelRaw.split(' ');
+
+    let type, num, variant = null, popupIndex = null;
+    if(labelRaw.startsWith('main')){
+      type = 'main'; num = 0;
+    } else if(labelRaw.startsWith('upsell')){
+      type = 'upsell';
+      num = parseInt(parts[1], 10) || 1;
+      variant = parts[2] === 'pop' ? 'pop' : (parts[2] && /^[a-z]$/.test(parts[2])) ? parts[2] : null;
+    } else {
+      type = 'downsell';
+      num = parseInt(parts[1], 10) || 1;
+      if(parts[2] === 'pop') { variant = 'pop'; popupIndex = parseInt(parts[3], 10) || 1; }
+      else variant = (parts[2] && /^[a-z]$/.test(parts[2])) ? parts[2] : null;
+    }
+
+    const urls = [...block.matchAll(/https?:\/\/[^\s\)\]\*"'<>]+/g)];
+    const popMarker = /(?:\bpop\s*up\b|\bpop\b)/ig;
+    const markerText = block.replace(/https?:\/\/[^\s\)\]<>"']+/g, url => ' '.repeat(url.length));
+    const popMatches = [...markerText.matchAll(popMarker)];
+    const isExplicitPopup = type === 'downsell' && variant === 'pop';
+    const isPopupBlock = isExplicitPopup || popMatches.length > 0;
+    const firstPopPos = popMatches.length ? popMatches[0].index : -1;
+    const pageUrl = isExplicitPopup ? null : (isPopupBlock
+      ? (urls.find(u => u.index < firstPopPos)?.[0] || null)
+      : (urls[0]?.[0] || null));
+    const packCounts = extractPackCounts(block);
+    const blockProductName = extractProductName(block);
+
+    if(type === 'upsell' && pageUrl && (!currentUpsell || currentUpsell.url !== pageUrl)){
+      currentUpsell = {num, url:pageUrl, blockProductName};
+      nextPopupIndex = 1;
+    }
+
+    // A URL before a popup label is a real downsell page; URLs attached to the popup label are overlay assets.
+    if(pageUrl){
+      pages.push({type, num, variant: isExplicitPopup ? null : variant, popupIndex:null, isPopup:false, url:pageUrl, packCounts, blockProductName, parentUpsellUrl:type === 'downsell' && currentUpsell ? currentUpsell.url : null, sourceDownsellNum:type === 'downsell' ? num : null, raw:block.trim()});
+      currentTrackingPageUrl = pageUrl;
+    }
+
+    if(type === 'downsell' && isPopupBlock){
+      const popupCount = Math.max(1, popMatches.length || (isExplicitPopup ? 1 : 0));
+      for(let popupOffset=0; popupOffset<popupCount; popupOffset++){
+        const index = isExplicitPopup ? popupIndex : nextPopupIndex++;
+        nextPopupIndex = Math.max(nextPopupIndex, index + 1);
+        pages.push({
+          type:'downsell', num:currentUpsell ? currentUpsell.num : num, variant:'pop', popupIndex:index, isPopup:true,
+          parentUpsellUrl:currentUpsell ? currentUpsell.url : null, url:currentUpsell ? currentUpsell.url : null,
+          trackingPageUrl:pageUrl || currentTrackingPageUrl || (currentUpsell && currentUpsell.url) || null,
+          sourceDownsellNum:num, packCounts, blockProductName,
+          raw:block.trim()
+        });
+      }
+    }
+  }
+  return pages.filter(p => p.url || p.isPopup);
+}
+
+function buildModel(pages, productName, thankYouUrl, accountId, splitFunnel){
+  const prefixFor = (name) => (name || productName || 'xxx').replace(/[^a-zA-Z]/g,'').toLowerCase().slice(0,3) || 'xxx';
+  const defaultThankYou = accountId ? `https://buygoods.com/thankyou?account_id=${accountId}` : null;
+  const effectiveThankYou = thankYouUrl || defaultThankYou;
+
+  const mainPage = pages.find(p => p.type === 'main');
+  const upsells = pages.filter(p => p.type === 'upsell')
+    .sort((a,b) => a.num - b.num || (a.variant||'').localeCompare(b.variant||''));
+  const downsells = pages.filter(p => p.type === 'downsell' && !p.isPopup)
+    .sort((a,b) => a.num - b.num || (a.variant||'').localeCompare(b.variant||''));
+  const popupDownsells = pages.filter(p => p.type === 'downsell' && p.isPopup)
+    .sort((a,b) => a.num - b.num || a.popupIndex - b.popupIndex);
+
+  const upsellNums = [...new Set(upsells.map(u => u.num))].sort((a,b) => a-b);
+
+  function findUpsell(num, variant){
+    return upsells.find(u => u.num === num && u.variant === variant)
+        || upsells.find(u => u.num === num && !u.variant);
+  }
+  function findDownsell(num, variant){
+    return downsells.find(d => d.num === num && d.variant === variant)
+        || downsells.find(d => d.num === num && !d.variant)
+        || downsells.find(d => d.num === num);
+  }
+  function nextDownsell(num, variant){
+    const nextNum = [...new Set(downsells.map(d => d.num))].filter(n => n >= num).sort((a,b)=>a-b)[0];
+    return nextNum == null ? null : findDownsell(nextNum, variant);
+  }
+  function nextUpsellUrl(num, variant){
+    const nextNum = upsellNums.find(n => n > num);
+    if(!nextNum) return effectiveThankYou;
+    const next = variant === 'pop'
+      ? (upsells.find(u => u.num === nextNum) || null)
+      : findUpsell(nextNum, variant);
+    return next ? next.url : effectiveThankYou;
+  }
+
+  const ordered = [];
+  if(mainPage) ordered.push(mainPage);
+  const allNums = [...new Set([...upsells.map(u=>u.num), ...downsells.map(d=>d.num), ...popupDownsells.map(d=>d.num)])].sort((a,b)=>a-b);
+  for(const n of allNums){
+    ordered.push(...upsells.filter(u => u.num === n));
+    ordered.push(...downsells.filter(d => d.num === n));
+    ordered.push(...popupDownsells.filter(d => d.num === n));
+  }
+
+  const hasSplitVariants = upsells.some(u => u.variant && u.variant !== 'pop');
+  const firstUpsellNum = upsellNums[0];
+
+  const built = ordered.map(p => {
+    const isPopup = p.variant === 'pop';
+    const sourceDownsell = p.isPopup ? pages.find(q => q.type === 'downsell' && !q.isPopup && q.num === p.sourceDownsellNum && q.blockProductName) : null;
+    const parentUpsell = p.isPopup ? pages.find(q => q.type === 'upsell' && q.url === p.parentUpsellUrl) : null;
+    const productNameUsed = p.blockProductName || (sourceDownsell && sourceDownsell.blockProductName) || (parentUpsell && parentUpsell.blockProductName) || productName;
+    const suffix = p.type === 'main' ? '' : p.type === 'upsell' ? (isPopup ? 'up' : 'u') : (p.isPopup ? `d${p.sourceDownsellNum || p.num}p${p.popupIndex || 1}` : (isPopup ? 'dp' : 'd'));
+    const options = p.packCounts;
+    const pagePrefix = prefixFor(productNameUsed);
+    const codenames = options.length
+      ? options.map(c => `${pagePrefix}${c}${suffix}`)
+      : [`${pagePrefix}TBD${suffix}`];
+
+    let buyTarget, buyTargets = null, declineTarget = null;
+
+    if(p.type === 'main'){
+      if(splitFunnel && hasSplitVariants && firstUpsellNum != null){
+        buyTargets = (options.length ? options : [null]).map((_, i) => {
+          const v = ALPHA[i];
+          const target = findUpsell(firstUpsellNum, v);
+          return target ? target.url : (findUpsell(firstUpsellNum, null)?.url || effectiveThankYou);
+        });
+        buyTarget = buyTargets[0];
+      } else {
+        const u1 = firstUpsellNum != null ? (findUpsell(firstUpsellNum, null) || upsells[0]) : null;
+        buyTarget = u1 ? u1.url : effectiveThankYou;
+        buyTargets = null;
+      }
+    } else if(p.type === 'upsell'){
+      buyTarget = nextUpsellUrl(p.num, p.variant);
+      const paired = downsells.find(d => d.parentUpsellUrl === p.url && (!d.variant || d.variant === p.variant)) || nextDownsell(p.num, p.variant);
+      declineTarget = paired ? paired.url : effectiveThankYou;
+    } else if(p.isPopup){
+      buyTarget = nextUpsellUrl(p.num, 'pop');
+      const nextPopup = popupDownsells.find(q => q.parentUpsellUrl === p.parentUpsellUrl && q.popupIndex === p.popupIndex + 1);
+      declineTarget = nextPopup ? nextPopup.url : buyTarget;
+    } else {
+      const parent = upsells.find(u => u.url === p.parentUpsellUrl);
+      const branch = p.variant || (parent && parent.variant) || null;
+      const nextPage = findNextFunnelPage(ordered, p, branch);
+      buyTarget = nextPage ? nextPage.url : effectiveThankYou;
+      const followingDownsell = nextDownsell(p.num + 1, p.variant);
+      declineTarget = followingDownsell ? followingDownsell.url : effectiveThankYou;
+    }
+
+    return {
+      type: p.type, num: p.num, variant: p.variant, popupIndex:p.popupIndex || null, isPopup:!!p.isPopup, parentUpsellUrl:p.parentUpsellUrl || null, trackingPageUrl:p.trackingPageUrl || null, sourceDownsellNum:p.sourceDownsellNum || null, blockProductName:p.blockProductName || null,
+      url: p.url, codenames, options, suffix,
+      skus: options.map(() => ''),
+      productNameUsed, codenamePrefix:pagePrefix,
+      hasPacks: options.length > 0,
+      buyTarget, buyTargets, declineTarget
+    };
+  });
+
+  built.filter(p => p.isPopup).forEach(p => {
+    const nextPopup = built.find(q => q.isPopup && q.parentUpsellUrl === p.parentUpsellUrl && q.popupIndex === p.popupIndex + 1);
+    p.declineTargetRef = nextPopup || null;
+    p.declineTarget = nextPopup ? nextPopup.url : p.buyTarget;
+  });
+  built.filter(p => p.type === 'upsell').forEach(p => {
+    const popup = built.find(q => q.isPopup && q.parentUpsellUrl === p.url);
+    if(popup){ p.declineTargetRef = popup; p.declineTarget = null; }
+  });
+
+  // Global deduplication
+  const codenameCount = {};
+  built.forEach(p => p.codenames.forEach(c => {
+    codenameCount[c] = (codenameCount[c] || 0) + 1;
+  }));
+  const dupes = new Set(Object.keys(codenameCount).filter(c => codenameCount[c] > 1));
+  if(dupes.size > 0){
+    built.forEach(p => {
+      p.codenames = p.codenames.map(c =>
+        dupes.has(c) && !p.isPopup ? `${c}${p.num}${p.variant || ''}` : c
+      );
+    });
+  }
+
+  return { pages: built, thankYouUrl: effectiveThankYou, fallbackProductName:productName };
+}
+
+function checkoutBase(type){
+  return type === 'main'
+    ? 'https://buygoods.com/secure/checkout.html'
+    : 'https://buygoods.com/secure/upsell/';
+}
+
+function buildLink(accountId, codename, redirectUrl, type, lang){
+  const base = checkoutBase(type);
+  const enc = redirectUrl ? b64(redirectUrl) : 'TODO_BASE64_REDIRECT';
+  const langParam = lang ? `&lang=${lang}` : '';
+  return `${base}?account_id=${accountId}&product_codename=${codename}${langParam}${redirectUrl ? '&redirect='+enc : ''}`;
+}
+
+function trackingScript(accountId, codenames){
+  return '<scr'+'ipt>var mysrc = "https://tracking.buygoods.com/track/?a='+accountId+'&firstcookie=0"+"&tracking_redirect=&referrer="+encodeURIComponent(document.referrer)+"&sessid2="+ReadCookie(\'sessid2\')+"&product='+codenames.join(',')+'&vid1=&vid2=&vid3=&caller_url="+encodeURIComponent(window.location.href); if(typeof add_to_cart !== \'undefined\') { mysrc = mysrc+\'&add_to_cart=\'+add_to_cart; } var newScript = document.createElement(\'script\'); newScript.type = \'text/javascript\'; newScript.defer = true; newScript.src = mysrc; var s = document.getElementsByTagName(\'script\')[0]; s.parentNode.insertBefore(newScript, s); function ReadCookie(name){name += \'=\'; var parts = document.cookie.split(/;\\s*/);for (var i = 0; i < parts.length; i++) {var part = parts[i]; if (part.indexOf(name) == 0) return part.substring(name.length)} return \'\'}</'+'script>';
+}
+
+function trackingCodenamesFor(page, model){
+  const codenames = [...page.codenames];
+  model.pages.filter(p => p.isPopup && (p.trackingPageUrl === page.url || (!p.trackingPageUrl && p.parentUpsellUrl === page.url)))
+    .forEach(p => p.codenames.forEach(codename => {
+      if(!codenames.includes(codename)) codenames.push(codename);
+    }));
+  return codenames;
+}
+
+function iframeScript(accountId, token, isMain){
+  const t = token || 'PUT_YOUR_CONVERSION_TOKEN_HERE';
+  if(isMain){
+    return '<scr'+'ipt type="text/javascript">setTimeout(function () {var i = document.createElement("iframe"),oid = new URLSearchParams(window.location.search);i.async = true;i.style="display:none";i.setAttribute("src", "https://buygoods.com/affiliates/go/conversion/iframe/bg?a='+accountId+'&t='+t+'&s="+ReadCookie(\'sessid2\'));document.body.appendChild(i);}, 1000);</'+'script>';
+  }
+  return '<scr'+'ipt type="text/javascript">var i = document.createElement("iframe"),oid = new URLSearchParams(window.location.search);i.async = true;i.style="display:none";i.setAttribute("src", "https://buygoods.com/affiliates/go/conversion/iframe/bg?a='+accountId+'&t='+t+'&conversion=1&s="+ReadCookie(\'sessid2\')+"&o="+oid.get(\'order_id_global\')+"&ut="+oid.get(\'token\'));document.body.appendChild(i);</'+'script>';
+}
+
+function generate(){
+  const errorBox = document.getElementById('errorBox');
+  errorBox.innerHTML = '';
+  const accountId = document.getElementById('accountId').value.trim();
+  const productName = document.getElementById('productName').value.trim();
+  const token = document.getElementById('token').value.trim();
+  const thankYouUrl = document.getElementById('thankYou').value.trim();
+  const offerFlowRaw = document.getElementById('offerFlow').value.trim();
+  const lang = document.getElementById('lang').value;
+  const splitToggle = document.getElementById('splitToggle');
+    const splitFunnel = !!splitToggle?.classList.contains('on');
+
+  if(!accountId || !productName || !offerFlowRaw){
+    errorBox.innerHTML = '<div class="err">Account ID, product name, and the offer flow text are all required.</div>';
+    return false;
+  }
+
+  const pages = parseOfferFlow(offerFlowRaw);
+  if(pages.length === 0){
+    errorBox.innerHTML = '<div class="err">Couldn\'t find any "Main page / Upsell N / Downsell N: URL" patterns in the pasted text. Check the format against the placeholder example.</div>';
+    return false;
+  }
+
+  const model = buildModel(pages, productName, thankYouUrl, accountId, splitFunnel);
+  model.pages.forEach((p, i) => { p.id = `page-${i}`; p.originalNum = p.num; p.originalDownsellNum = p.sourceDownsellNum; });
+  lastModel = model;
+  lastSettings = {accountId, token, lang, splitFunnel};
+  syncSplitPageLabels();
+  model.pages.forEach(p => { p.originalLabel = labelFor(p); });
+
+  renderFlow(model, splitFunnel);
+  renderTable(model);
+  renderOutput(accountId, token, lang, model);
+
+  document.getElementById('emptyPanel').style.display = 'none';
+  document.getElementById('flowPanel').style.display = 'block';
+  document.getElementById('tablePanel').style.display = 'block';
+  document.getElementById('outputPanel').style.display = 'block';
+  document.getElementById('saveDocumentButton').style.display = 'inline-block';
+  return true;
+}
+
+async function handleGenerateClick(){
+  recordGenerateClick();
+  if(!generate()) return;
+  try {
+    await handleGeneratedDocument();
+  } catch(error) {
+    setDocumentStatus(`Generated locally, but could not save the document: ${error.message}`, true);
+  }
+}
+
+function setDocumentStatus(message, isError = false, shareToken = ''){
+  const status = document.getElementById('documentSaveStatus');
+  if(!status) return;
+  status.className = `doc-status${isError ? ' err' : ''}`;
+  if(shareToken){
+    const link = makeShareUrl(shareToken);
+    status.innerHTML = `${escapeHtml(message)} · <a href="${escapeHtml(link)}" target="_blank" rel="noopener">Preview/share link</a>`;
+  } else status.textContent = message;
+}
+
+function markDocumentDirty(){
+  const button = document.getElementById('saveDocumentButton');
+  if(button) button.style.display = 'inline-block';
+  setDocumentStatus('Unsaved changes.');
+}
+
+async function apiJson(url, options){
+  const response = await fetch(url, options);
+  const body = await response.json().catch(() => ({}));
+  if(!response.ok) throw Object.assign(new Error(body.error || `Request failed (${response.status})`), {status:response.status, body});
+  return body;
+}
+
+function currentProducts(){
+  if(!lastModel) return [];
+  return lastModel.pages.flatMap(page => page.codenames.map((codename, index) => ({
+    step:labelFor(page), productName:page.productNameUsed || lastSettings.productName,
+    bottles:page.options[index] ?? null, codename, sku:String(page.skus?.[index] || '').trim(),
+    pageType:page.type, isPopup:!!page.isPopup, url:page.url
+  })));
+}
+
+function currentBuilderState(){
+  const accountId = document.getElementById('accountId').value.trim();
+  const productName = document.getElementById('productName').value.trim();
+  const token = document.getElementById('token').value.trim();
+  const thankYouUrl = document.getElementById('thankYou').value.trim();
+  const offerFlow = document.getElementById('offerFlow').value;
+  const lang = document.getElementById('lang').value;
+  const splitFunnel = !!document.getElementById('splitToggle')?.classList.contains('on');
+  return {
+    accountId, productName, token, thankYouUrl, offerFlow, lang, splitFunnel,
+    thankYouUrlResolved:lastModel?.thankYouUrl || '', fallbackProductName:lastModel?.fallbackProductName || productName,
+    pages:lastModel?.pages.map(page => JSON.parse(JSON.stringify(page))) || []
+  };
+}
+
+async function handleGeneratedDocument(){
+  if(location.protocol === 'file:'){
+    setDocumentStatus('Document saving is available when the tool is opened from its Vercel URL.');
+    return;
+  }
+  if(editingDocumentId){
+    await saveCurrentDocument({id:editingDocumentId});
+    return;
+  }
+  const accountId = document.getElementById('accountId').value.trim();
+  const productName = document.getElementById('productName').value.trim();
+  const params = new URLSearchParams({action:'duplicates', accountId, productName});
+  const result = await apiJson(`/api/documents?${params}`);
+  if(result.documents?.length){
+    pendingDuplicateDocuments = result.documents;
+    pendingDocumentContext = {accountId, productName};
+    showDuplicateDialog();
+    return;
+  }
+  await saveCurrentDocument();
+}
+
+function showDuplicateDialog(){
+  const docs = pendingDuplicateDocuments;
+  document.getElementById('duplicateMessage').textContent = `A saved document already exists for account ${pendingDocumentContext.accountId} and product ${pendingDocumentContext.productName}. Choose whether to open the existing document or save this generation as another document.`;
+  document.getElementById('duplicateChoices').innerHTML = `<div class="doc-results">${docs.map(doc => `<div class="doc-card"><div><div class="doc-card-title">${escapeHtml(doc.document_name)}</div><div class="doc-card-meta">Created ${formatDocumentDate(doc.created_at)}</div></div><div class="doc-card-actions"><a class="btn-ghost" href="${escapeHtml(makeShareUrl(doc.share_token))}" target="_blank" rel="noopener">Preview</a></div></div>`).join('')}</div>`;
+  document.getElementById('duplicateModal').style.display = 'flex';
+}
+
+function closeDuplicateDialog(){
+  document.getElementById('duplicateModal').style.display = 'none';
+}
+
+async function editExistingDuplicate(){
+  const documentToEdit = pendingDuplicateDocuments[0];
+  if(!documentToEdit) return closeDuplicateDialog();
+  closeDuplicateDialog();
+  await loadSavedDocument(documentToEdit.id);
+}
+
+async function saveCurrentAsSecondDocument(){
+  closeDuplicateDialog();
+  editingDocumentId = null;
+  try { await saveCurrentDocument({allowDuplicate:true}); }
+  catch(error) { setDocumentStatus(`Could not save second document: ${error.message}`, true); }
+}
+
+async function saveCurrentDocument({id = null, allowDuplicate = false} = {}){
+  setDocumentStatus('Saving document…');
+  const result = await apiJson('/api/documents?action=save', {
+    method:'POST', headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({
+      id, allowDuplicate,
+      accountId:document.getElementById('accountId').value.trim(),
+      productName:document.getElementById('productName').value.trim(),
+      builderState:currentBuilderState(), products:currentProducts(),
+      output:(document.getElementById('output').innerText || document.getElementById('output').textContent || '').trim()
+    })
+  });
+  editingDocumentId = result.id;
+  document.getElementById('saveDocumentButton').style.display = 'inline-block';
+  const label = id ? 'Updated' : 'Saved';
+  setDocumentStatus(`${label}: ${result.documentName}`, false, result.shareToken);
+  return result;
+}
+
+async function saveDocumentChanges(){
+  try {
+    if(editingDocumentId) await saveCurrentDocument({id:editingDocumentId});
+    else await handleGeneratedDocument();
+  } catch(error) {
+    setDocumentStatus(`Could not save document: ${error.message}`, true);
+  }
+}
+
+function formatDocumentDate(value){
+  const date = new Date(value);
+  if(Number.isNaN(date.getTime())) return 'unknown date';
+  return new Intl.DateTimeFormat('en-GB', {timeZone:'Europe/Bucharest',day:'2-digit',month:'2-digit',year:'numeric'}).format(date);
+}
+
+function makeShareUrl(token){
+  const share = new URL(window.location.href);
+  share.search = '';
+  share.hash = '';
+  share.searchParams.set('share', token);
+  return share.toString();
+}
+
+async function searchSavedDocuments(){
+  const query = document.getElementById('documentSearch').value.trim();
+  const results = document.getElementById('documentResults');
+  if(!query){ results.innerHTML = ''; return; }
+  results.textContent = 'Searching…';
+  try {
+    const data = await apiJson(`/api/documents?action=search&q=${encodeURIComponent(query)}`);
+    if(!data.documents?.length){ results.innerHTML = '<div class="doc-status">No saved documents found.</div>'; return; }
+    results.innerHTML = data.documents.map(doc => `<div class="doc-card"><div><div class="doc-card-title">${escapeHtml(doc.document_name)}</div><div class="doc-card-meta">Account ${escapeHtml(doc.account_id)} · ${escapeHtml(doc.product_name)} · Created ${formatDocumentDate(doc.created_at)}</div></div><div class="doc-card-actions"><a class="btn-ghost" href="${escapeHtml(makeShareUrl(doc.share_token))}" target="_blank" rel="noopener">Preview</a><button class="btn-primary" onclick="loadSavedDocument('${escapeHtml(doc.id)}')">Edit</button></div></div>`).join('');
+  } catch(error) {
+    results.textContent = `Search failed: ${error.message}`;
+  }
+}
+
+async function loadSavedDocument(id){
+  try {
+    const {document:doc} = await apiJson(`/api/documents?action=get&id=${encodeURIComponent(id)}`);
+    const state = doc.builder_state;
+    if(!state || !Array.isArray(state.pages)) throw new Error('Saved builder data is missing.');
+    document.getElementById('accountId').value = state.accountId || doc.account_id;
+    document.getElementById('productName').value = state.productName || doc.product_name;
+    document.getElementById('token').value = state.token || '';
+    document.getElementById('thankYou').value = state.thankYouUrl || '';
+    document.getElementById('offerFlow').value = state.offerFlow || '';
+    document.getElementById('lang').value = state.lang || 'en';
+    document.getElementById('splitToggle')?.classList.toggle('on', !!state.splitFunnel);
+    if(document.getElementById('splitToggle')) document.getElementById('splitToggle').textContent = state.splitFunnel ? 'Split Funnel: ON' : 'Split Funnel: OFF';
+    lastModel = {pages:state.pages.map(page => JSON.parse(JSON.stringify(page))), thankYouUrl:state.thankYouUrlResolved || '', fallbackProductName:state.fallbackProductName || state.productName};
+    lastSettings = {accountId:state.accountId || doc.account_id, productName:state.productName || doc.product_name, token:state.token || '', lang:state.lang || 'en', splitFunnel:!!state.splitFunnel};
+    editingDocumentId = doc.id;
+    syncSplitPageLabels();
+    renderFlow(lastModel, lastSettings.splitFunnel);
+    renderTable(lastModel);
+    renderOutput(lastSettings.accountId, lastSettings.token, lastSettings.lang, lastModel);
+    if(typeof doc.output === 'string'){
+      document.getElementById('output').textContent = doc.output;
+      lastOutput = doc.output;
+    }
+    document.getElementById('emptyPanel').style.display = 'none';
+    document.getElementById('flowPanel').style.display = 'block';
+    document.getElementById('tablePanel').style.display = 'block';
+    document.getElementById('outputPanel').style.display = 'block';
+    setDocumentStatus(`Editing saved document: ${doc.document_name} · created ${formatDocumentDate(doc.created_at)}`, false, doc.share_token);
+    window.scrollTo({top:0, behavior:'smooth'});
+  } catch(error) {
+    setDocumentStatus(`Could not open document: ${error.message}`, true);
+  }
+}
+
+async function copyShareLink(){
+  try { await navigator.clipboard.writeText(window.location.href); }
+  catch(error) { window.prompt('Copy this share URL:', window.location.href); }
+}
+
+async function loadSharedPreview(token){
+  document.querySelectorAll('.wrap > .panel').forEach(panel => { panel.style.display = panel.id === 'sharedPreviewPanel' ? 'block' : 'none'; });
+  document.querySelector('.wrap > header h1').textContent = 'Shared integration document';
+  document.querySelector('.wrap > header p').textContent = 'Read-only preview.';
+  document.getElementById('sharedPreviewPanel').style.display = 'block';
+  const meta = document.getElementById('sharedDocumentMeta');
+  const output = document.getElementById('sharedDocumentOutput');
+  meta.textContent = 'Loading document…';
+  try {
+    const data = await apiJson(`/api/documents?action=share&token=${encodeURIComponent(token)}`);
+    document.title = data.documentName;
+    meta.textContent = `${data.documentName} · Created ${formatDocumentDate(data.createdAt)}`;
+    output.textContent = data.output;
+  } catch(error) {
+    meta.textContent = 'Could not load this shared document.';
+    output.textContent = error.message;
+  }
+}
+
+function initializeDocumentUi(){
+  const search = document.getElementById('documentSearch');
+  search?.addEventListener('keydown', event => { if(event.key === 'Enter') searchSavedDocuments(); });
+  document.getElementById('output')?.addEventListener('input', markDocumentDirty);
+  const token = new URLSearchParams(window.location.search).get('share');
+  if(token) loadSharedPreview(token);
+}
+
+initializeDocumentUi();
+
+function stepNumFor(p){ return p.assignedLabel ? p.assignedLabel.num : p.num; }
+function stepVariantFor(p){ return p.assignedLabel ? p.assignedLabel.variant : p.variant; }
+
+function findNextFunnelPage(pages, source, branch){
+  const start = pages.indexOf(source);
+  if(start < 0) return null;
+  for(let i=start+1; i<pages.length; i++){
+    const candidate = pages[i];
+    if(!['upsell','downsell'].includes(candidate.type) || candidate.isPopup) continue;
+    const candidateBranch = stepVariantFor(candidate);
+    if(branch ? (candidateBranch === branch || !candidateBranch) : !candidateBranch) return candidate;
+  }
+  return null;
+}
+
+function findNextUpsellPage(pages, source, branch){
+  const start = pages.indexOf(source);
+  if(start < 0) return null;
+  for(let i=start+1; i<pages.length; i++){
+    const candidate = pages[i];
+    if(candidate.type !== 'upsell' || candidate.isPopup) continue;
+    const candidateBranch = stepVariantFor(candidate);
+    if(branch ? (candidateBranch === branch || !candidateBranch) : !candidateBranch) return candidate;
+  }
+  return null;
+}
+
+function findNextDownsellPage(pages, branch){
+  return pages.find(candidate => {
+    if(candidate.type !== 'downsell' || candidate.isPopup) return false;
+    const candidateBranch = stepVariantFor(candidate);
+    return branch ? (candidateBranch === branch || !candidateBranch) : !candidateBranch;
+  }) || null;
+}
+
+function findNextNoThanksPage(pages, source, branch){
+  if(source.isPopup){
+    const nextPopup = pages.find(candidate => candidate.isPopup
+      && candidate.parentUpsellUrl === source.parentUpsellUrl
+      && candidate.popupIndex === source.popupIndex + 1);
+    if(nextPopup) return nextPopup;
+    const parent = pages.find(candidate => candidate.type === 'upsell' && candidate.url === source.parentUpsellUrl);
+    return parent ? findNextFunnelPage(pages, parent, branch) : findNextFunnelPage(pages, source, branch);
+  }
+  return findNextFunnelPage(pages, source, branch);
+}
+
+function escapeHtml(value){
+  return String(value ?? '').replace(/[&<>"']/g, ch => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
+}
+
+function codenameExplanation(p, index){
+  const code = p.codenames[index] || '';
+  const product = p.productNameUsed || 'Offer product';
+  const prefix = p.codenamePrefix || product.replace(/[^a-zA-Z]/g,'').toLowerCase().slice(0,3) || 'xxx';
+  const quantity = p.options[index] ?? 'TBD';
+  let step;
+  if(p.isPopup) step = `d${p.sourceDownsellNum || p.num}p${p.popupIndex || 1} (Downsell ${p.sourceDownsellNum || p.num}, popup ${p.popupIndex || 1})`;
+  else if(p.type === 'main') step = 'no step suffix (Main page)';
+  else if(p.type === 'upsell') step = `u (Upsell${stepVariantFor(p) ? ` ${String(stepVariantFor(p)).toUpperCase()}` : ''})`;
+  else step = `d (Downsell${stepVariantFor(p) ? ` ${String(stepVariantFor(p)).toUpperCase()}` : ''})`;
+  const formula = `${prefix} + ${quantity} + ${step} = ${code}`;
+  return p.manualCodenames?.[index]
+    ? `Manually edited: ${code}. Product: ${product}; pack/bottle count: ${quantity}. Standard pattern: ${formula}.`
+    : `${product}: ${formula}`;
+}
+
+function renderCodenameLegend(model){
+  const legend = document.getElementById('codenameLegend');
+  if(!legend) return;
+  const rows = model.pages.flatMap(p => p.codenames.map((code, i) =>
+    `<div class="codename-legend-row"><code>${escapeHtml(code)}</code><span>${escapeHtml(codenameExplanation(p, i))}</span></div>`
+  )).join('');
+  legend.innerHTML = `<div class="codename-legend-title">Codename legend</div>
+    <div class="codename-legend-formula">General rule: <b>offer/product prefix</b> (first 3 letters) + <b>pack/bottle count</b> + <b>step</b>. Upsell uses <code>u</code>, Downsell uses <code>d</code>, and a popup uses <code>d[Downsell number]p[popup number]</code>. Main page has no step suffix. Duplicate codenames may receive an extra disambiguator. Hover over any codename in Resolved flow for its current breakdown; double-click to edit it.</div>
+    <div class="codename-legend-list">${rows}</div>`;
+  legend.style.display = 'block';
+}
+
+function labelFor(p){
+  const num = stepNumFor(p);
+  const variant = stepVariantFor(p);
+  const isPopup = variant === 'pop';
+  const v = (!isPopup && variant) ? ` ${variant.toUpperCase()}` : '';
+  const popTag = isPopup ? ' (POP)' : '';
+  if(p.type === 'main') return 'Main';
+  if(p.type === 'upsell') return `Upsell ${num}${v}${popTag}`;
+  if(p.isPopup) return `Downsell ${num} pop ${p.popupIndex || 1}`;
+  return `Downsell ${num}${v}${popTag}`;
+}
+
+// Helper: renders a chain of page nodes + arrows + thank-you into any container
+function appendChain(container, pages){
+  pages.forEach(p => {
+    const node = document.createElement('div');
+    node.className = `node ${p.type}`;
+    node.draggable = true;
+    node.dataset.pageId = p.id;
+    const pageForUrl = url => lastModel && lastModel.pages.find(q => q.url === url);
+    const buyPage = pageForUrl(p.buyTarget);
+    const declinePage = p.declineTargetRef || pageForUrl(p.declineTarget);
+    const buyRoute = p.splitByProduct ? 'Split by product option' : (buyPage ? labelFor(buyPage) : 'Thank you');
+    const declineRoute = p.isPopup
+      ? (declinePage ? labelFor(declinePage) : 'No next popup')
+      : (declinePage ? labelFor(declinePage) : (p.declineTarget ? 'Thank you' : ''));
+    node.innerHTML = `<span class="t">${labelFor(p)}</span>${p.originalLabel && p.originalLabel !== labelFor(p) ? `<span class="old-label">(old ${p.originalLabel})</span>` : ''}${p.codenames.map((c,i)=>`<span class="codename-editable" data-page-id="${p.id}" data-codename-index="${i}" title="${escapeHtml(codenameExplanation(p,i))} Double-click to edit">${escapeHtml(c)}</span>`).join('')}<span class="route-label">Buy/Yes → ${buyRoute}</span>${declineRoute ? `<span class="route-label">No/Decline → ${declineRoute}</span>` : ''}`;
+    const plus = document.createElement('button');
+    plus.type = 'button'; plus.className = 'flow-plus'; plus.textContent = p.splitByProduct ? '−' : '+';
+    plus.title = p.options.length >= 2 ? (p.splitByProduct ? 'Remove product split' : 'Split Buy/Yes by product option') : 'Requires at least two product options';
+    plus.disabled = p.options.length < 2; plus.draggable = false;
+    plus.addEventListener('click', e => { e.preventDefault(); e.stopPropagation(); toggleProductSplit(p.id); });
+    node.appendChild(plus);
+    node.addEventListener('dragstart', e => { e.dataTransfer.setData('text/plain', p.id); node.classList.add('dragging'); });
+    node.addEventListener('dragend', () => node.classList.remove('dragging'));
+    node.addEventListener('dragover', e => { e.preventDefault(); node.classList.add('drag-over'); });
+    node.addEventListener('dragleave', () => node.classList.remove('drag-over'));
+    node.addEventListener('drop', e => { e.preventDefault(); node.classList.remove('drag-over'); reorderPages(e.dataTransfer.getData('text/plain'), p.id); });
+    container.appendChild(node);
+    if(p.splitByProduct && p.options.length >= 2){
+      const split = document.createElement('div'); split.className = 'product-split';
+      p.options.forEach((count, i) => {
+        const slot = document.createElement('div'); slot.className = 'product-drop-slot';
+        slot.dataset.sourceId = p.id; slot.dataset.optionIndex = String(i);
+        const letter = String.fromCharCode(97 + i);
+        const assignedTarget = p.buyTargetIds && p.buyTargetIds[i] ? lastModel.pages.find(q => q.id === p.buyTargetIds[i]) : null;
+        const defaultTarget = pageForUrl(p.buyTargets && p.buyTargets[i] || p.buyTarget);
+        const target = assignedTarget || defaultTarget;
+        slot.innerHTML = `<span>${count} ${count === 1 ? 'Bottle' : 'Bottles'} · ${letter}</span><span class="target-name">${target ? labelFor(target) : 'Drop an Upsell here'}</span>${target && target.originalLabel && target.originalLabel !== labelFor(target) ? `<span class="old-label">(old ${target.originalLabel})</span>` : ''}`;
+        slot.addEventListener('dragover', e => { e.preventDefault(); slot.classList.add('drag-over'); });
+        slot.addEventListener('dragleave', () => slot.classList.remove('drag-over'));
+        slot.addEventListener('drop', e => { e.preventDefault(); e.stopPropagation(); slot.classList.remove('drag-over'); setProductSplitDestination(p.id, i, e.dataTransfer.getData('text/plain')); });
+        split.appendChild(slot);
+      });
+      container.appendChild(split);
+    }
+    const arrow = document.createElement('span');
+    arrow.className = 'arrow';
+    arrow.textContent = '→';
+    container.appendChild(arrow);
+  });
+  if(pages.length){
+    const last = pages[pages.length - 1];
+    const ty = document.createElement('div');
+    ty.className = 'node';
+    ty.style.borderColor = 'var(--line)';
+    ty.innerHTML = `<span class="t">Thank you</span><span>${last.buyTarget ? last.buyTarget.slice(0,24)+'…' : '—'}</span>`;
+    container.appendChild(ty);
+  }
+}
+
+function renderFlow(model, splitFunnel){
+  const box = document.getElementById('flowBox');
+  box.innerHTML = '';
+
+  // 'pop' is not a letter-branch variant — exclude it from split display
+  const hasVariants = model.pages.some(p => { const v = stepVariantFor(p); return v && v !== 'pop'; });
+  const hasProductSplit = model.pages.some(p => p.splitByProduct && p.options.length >= 2);
+
+  if((!splitFunnel && !hasProductSplit) || !hasVariants){
+    // Standard: single horizontal chain
+    box.style.cssText = 'display:flex;flex-wrap:wrap;gap:0;align-items:center;';
+    appendChain(box, model.pages);
+    return;
+  }
+
+  // Split mode: one labeled row per letter-branch
+  box.style.cssText = 'display:flex;flex-direction:column;flex-wrap:nowrap;gap:0;align-items:stretch;';
+
+  const mainPage   = model.pages.find(p => p.type === 'main');
+  // Only letter variants (a, b, c…) — never 'pop'
+  const variants   = [...new Set(
+    model.pages.filter(p => { const v = stepVariantFor(p); return v && v !== 'pop'; }).map(stepVariantFor)
+  )].sort();
+  const stepNums = [...new Set(model.pages.filter(p => p.type === 'upsell' || p.type === 'downsell').map(stepNumFor))].sort((a,b) => a-b);
+
+  variants.forEach((v, vi) => {
+    // Build chain: Main → Upsell N-v (or no-variant) → Downsell N-v (or no-variant) → …
+    const chain = [];
+    if(mainPage) chain.push(mainPage);
+
+    for(const n of stepNums){
+      const u = model.pages.find(p => p.type==='upsell'   && stepNumFor(p)===n && stepVariantFor(p)===v)
+             || model.pages.find(p => p.type==='upsell'   && stepNumFor(p)===n && !stepVariantFor(p));
+      if(u) chain.push(u);
+
+      const d = model.pages.find(p => p.type==='downsell' && !p.isPopup && stepNumFor(p)===n && stepVariantFor(p)===v)
+             || model.pages.find(p => p.type==='downsell' && !p.isPopup && stepNumFor(p)===n && !stepVariantFor(p))
+             || model.pages.find(p => p.type==='downsell' && !p.isPopup && stepNumFor(p)===n);
+      if(d) chain.push(d);
+      chain.push(...model.pages.filter(p => {
+        if(!p.isPopup || stepNumFor(p)!==n) return false;
+        const parent = model.pages.find(q => q.type === 'upsell' && q.url === p.parentUpsellUrl);
+        const parentVariant = parent ? stepVariantFor(parent) : null;
+        return !parentVariant || parentVariant === v;
+      }).sort((a,b)=>a.popupIndex-b.popupIndex));
+    }
+
+    // Row wrapper — full width, horizontal chain
+    const row = document.createElement('div');
+    row.style.cssText = [
+      'display:flex',
+      'align-items:center',
+      'flex-wrap:wrap',
+      'gap:0',
+      'width:100%',
+      'padding:10px 0',
+      vi < variants.length - 1 ? 'border-bottom:1px solid var(--line)' : ''
+    ].filter(Boolean).join(';') + ';';
+
+    // Branch label badge
+    const lbl = document.createElement('div');
+    lbl.className = 'flow-branch-label';
+    lbl.textContent = `Branch ${v.toUpperCase()}`;
+    row.appendChild(lbl);
+
+    appendChain(row, chain);
+    box.appendChild(row);
+  });
+}
+
+function reorderPages(fromId, toId){
+  if(!lastModel || !fromId || fromId === toId) return;
+  const pages = lastModel.pages;
+  const from = pages.findIndex(p => p.id === fromId);
+  const to = pages.findIndex(p => p.id === toId);
+  if(from < 0 || to < 0) return;
+  const [moved] = pages.splice(from, 1);
+  pages.splice(to, 0, moved);
+
+  // Keep letter variants of the same source step together while assigning new step numbers.
+  for(const type of ['upsell', 'downsell']){
+    const typed = pages.filter(p => p.type === type && !p.isPopup);
+    const sourceOrder = [...new Set(typed.map(p => p.originalNum))];
+    typed.forEach(p => { p.num = sourceOrder.indexOf(p.originalNum) + 1; });
+  }
+  const upsells = pages.filter(p => p.type === 'upsell');
+  const downsells = pages.filter(p => p.type === 'downsell' && !p.isPopup);
+  const popupDownsells = pages.filter(p => p.type === 'downsell' && p.isPopup);
+  let inheritedUpsellUrl = null;
+  let currentTrackingPageUrl = null;
+  pages.forEach(p => {
+    if(p.type === 'upsell'){
+      inheritedUpsellUrl = p.url;
+      currentTrackingPageUrl = p.url;
+    } else if(p.type === 'downsell' && p.isPopup){
+      if(inheritedUpsellUrl){
+        p.parentUpsellUrl = inheritedUpsellUrl;
+        p.url = inheritedUpsellUrl;
+      }
+      p.trackingPageUrl = currentTrackingPageUrl || inheritedUpsellUrl || null;
+    } else if(p.type === 'downsell'){
+      if(inheritedUpsellUrl) p.parentUpsellUrl = inheritedUpsellUrl;
+      currentTrackingPageUrl = p.url;
+    }
+  });
+  const downsellNumByOriginal = new Map([...new Set(downsells.map(p => p.originalNum))].map((n,i) => [n, i+1]));
+  popupDownsells.forEach(p => {
+    p.sourceDownsellNum = downsellNumByOriginal.get(p.originalDownsellNum) || p.sourceDownsellNum || p.num;
+    const parentUpsell = upsells.find(u => u.url === p.parentUpsellUrl);
+    const sourceDownsell = downsells.find(d => d.originalNum === p.originalDownsellNum && d.blockProductName);
+    p.productNameUsed = p.blockProductName || (sourceDownsell && sourceDownsell.blockProductName) || (parentUpsell && parentUpsell.productNameUsed) || lastModel.fallbackProductName || p.productNameUsed;
+    p.codenamePrefix = (p.productNameUsed || 'xxx').replace(/[^a-zA-Z]/g,'').toLowerCase().slice(0,3) || 'xxx';
+    p.codenames = p.options.map((count,i) => p.manualCodenames?.[i] ? p.codenames[i] : `${p.codenamePrefix}${count}d${p.sourceDownsellNum}p${p.popupIndex || 1}`);
+  });
+  const thankYou = lastModel.thankYouUrl || '—';
+  const firstNum = upsells.length ? Math.min(...upsells.map(p => p.num)) : null;
+  const firstUpsell = firstNum == null ? null : upsells.find(p => p.num === firstNum);
+  const findVariant = (list, num, variant) => list.find(p => p.num === num && p.variant === variant)
+    || list.find(p => p.num === num && !p.variant)
+    || list.find(p => p.num === num);
+  const nextUpsell = p => {
+    const nextNum = [...new Set(upsells.map(u => u.num))].filter(n => n > p.num).sort((a,b)=>a-b)[0];
+    return nextNum == null ? null : findVariant(upsells, nextNum, p.variant);
+  };
+  pages.filter(p => p.type === 'main').forEach(p => {
+    if(lastSettings.splitFunnel && p.options.length){
+      p.buyTargets = p.options.map((_, i) => {
+        const target = firstNum == null ? null : findVariant(upsells, firstNum, String.fromCharCode(97+i));
+        return target ? target.url : (firstUpsell ? firstUpsell.url : thankYou);
+      });
+      p.buyTarget = p.buyTargets[0] || thankYou;
+    } else {
+      p.buyTargets = null;
+      p.buyTarget = firstUpsell ? firstUpsell.url : thankYou;
+    }
+  });
+  upsells.forEach(p => {
+    p.declineTargetRef = null;
+    const next = nextUpsell(p);
+    p.buyTarget = next ? next.url : thankYou;
+    const inheritedDownsell = downsells.find(d => d.parentUpsellUrl === p.url && (!d.variant || d.variant === p.variant));
+    const laterDownsells = downsells.filter(d => d.num >= p.num).sort((a,b)=>a.num-b.num);
+    const pairedDownsell = inheritedDownsell || findVariant(laterDownsells, laterDownsells.length ? laterDownsells[0].num : p.num, p.variant);
+    p.declineTarget = pairedDownsell ? pairedDownsell.url : thankYou;
+  });
+  downsells.forEach(p => {
+    const parent = upsells.find(u => u.url === p.parentUpsellUrl);
+    const next = parent ? nextUpsell(parent) : nextUpsell(p);
+    p.buyTarget = next ? next.url : thankYou;
+    const followingDownsells = downsells.filter(d => d.num > p.num).sort((a,b)=>a.num-b.num);
+    const followingDownsell = followingDownsells.length
+      ? findVariant(followingDownsells, followingDownsells[0].num, p.variant)
+      : null;
+    p.declineTarget = followingDownsell ? followingDownsell.url : thankYou;
+  });
+  popupDownsells.forEach(p => {
+    const parent = pages.find(u => u.type === 'upsell' && u.url === p.parentUpsellUrl);
+    if(parent) p.num = parent.num;
+    const nextNum = [...new Set(upsells.map(u => u.num))].filter(n => n > p.num).sort((a,b)=>a-b)[0];
+    const nextUpsellPage = nextNum == null ? null : findVariant(upsells, nextNum, p.variant);
+    p.buyTarget = nextUpsellPage ? nextUpsellPage.url : thankYou;
+    const nextPopup = popupDownsells.find(q => q.parentUpsellUrl === p.parentUpsellUrl && q.popupIndex === p.popupIndex + 1);
+    p.declineTargetRef = nextPopup || null;
+    p.declineTarget = nextPopup ? nextPopup.url : p.buyTarget;
+  });
+  upsells.forEach(p => {
+    const popup = popupDownsells.find(q => q.parentUpsellUrl === p.url);
+    if(popup){ p.declineTargetRef = popup; p.declineTarget = null; }
+  });
+  syncSplitPageLabels();
+  pages.filter(p => p.splitByProduct && p.options.length >= 2).forEach(p => {
+    p.splitFallbackTarget = p.buyTarget;
+    p.splitFallbackTargets = p.type === 'main' && p.buyTargets ? [...p.buyTargets] : p.options.map(() => p.buyTarget || thankYou);
+    p.buyTargets = p.options.map((_, i) => {
+      const target = p.buyTargetIds && p.buyTargetIds[i] ? pages.find(q => q.id === p.buyTargetIds[i]) : null;
+      return target ? target.url : (p.buyTargets && p.buyTargets[i]) || p.buyTarget || thankYou;
+    });
+    p.buyTarget = p.buyTargets[0] || thankYou;
+  });
+
+  renderFlow(lastModel, lastSettings.splitFunnel);
+  renderTable(lastModel);
+  renderOutput(lastSettings.accountId, lastSettings.token, lastSettings.lang, lastModel);
+  markDocumentDirty();
+}
+
+function toggleProductSplit(sourceId){
+  if(!lastModel) return;
+  const source = lastModel.pages.find(p => p.id === sourceId);
+  if(!source || source.options.length < 2) return;
+  source.splitByProduct = !source.splitByProduct;
+  if(source.splitByProduct){
+    source.splitFallbackTarget = source.buyTarget;
+    source.splitFallbackTargets = source.buyTargets ? [...source.buyTargets] : null;
+    source.buyTargetIds = source.options.map(() => null);
+    source.buyTargets = source.options.map((_, i) => source.splitFallbackTargets?.[i] || source.buyTarget || lastModel.thankYouUrl);
+  } else {
+    source.buyTargetIds = null;
+    source.buyTargets = source.splitFallbackTargets ? [...source.splitFallbackTargets] : null;
+    source.buyTarget = source.splitFallbackTarget || source.buyTarget;
+    source.splitFallbackTarget = null;
+    source.splitFallbackTargets = null;
+  }
+  syncSplitPageLabels();
+  renderFlow(lastModel, lastSettings.splitFunnel);
+  renderTable(lastModel);
+  renderOutput(lastSettings.accountId, lastSettings.token, lastSettings.lang, lastModel);
+  markDocumentDirty();
+}
+
+function syncSplitPageLabels(){
+  if(!lastModel) return;
+  lastModel.pages.forEach(p => { p.assignedLabel = null; });
+  const sources = lastModel.pages.filter(p => p.splitByProduct && p.options.length >= 2);
+  // Resolve cascades from Main outward so a branch target can itself start a later split.
+  for(let pass = 0; pass < lastModel.pages.length; pass++){
+    sources.forEach(source => {
+      (source.buyTargetIds || []).forEach((targetId, i) => {
+        const target = targetId && lastModel.pages.find(p => p.id === targetId);
+        if(!target || target.type !== 'upsell') return;
+        target.assignedLabel = {
+          num: source.type === 'main' ? 1 : stepNumFor(source) + 1,
+          variant: String.fromCharCode(97 + i)
+        };
+      });
+    });
+  }
+  lastModel.pages.filter(p => p.isPopup).forEach(p => {
+    const parent = lastModel.pages.find(u => u.type === 'upsell' && u.url === p.parentUpsellUrl);
+    if(parent) p.assignedLabel = {num:stepNumFor(parent), variant:'pop'};
+  });
+  refreshBranchBuyTargets();
+}
+
+function refreshBranchBuyTargets(){
+  if(!lastModel) return;
+  const thankYou = lastModel.thankYouUrl || '—';
+  lastModel.pages.filter(p => p.type === 'upsell' || p.type === 'downsell').forEach(p => {
+    const parent = p.type === 'downsell'
+      ? lastModel.pages.find(u => u.type === 'upsell' && u.url === p.parentUpsellUrl)
+      : null;
+    const branch = stepVariantFor(p) || (parent && stepVariantFor(parent)) || null;
+    const nextPage = findNextFunnelPage(lastModel.pages, p, branch);
+    const nextDeclinePage = findNextNoThanksPage(lastModel.pages, p, branch);
+    const nextUpsell = p.type === 'upsell'
+      ? findNextUpsellPage(lastModel.pages, p, branch)
+      : null;
+
+    if(p.splitByProduct && p.options.length >= 2){
+      p.buyTargets = p.options.map((_,i) => {
+        const selected = p.buyTargetIds?.[i] && lastModel.pages.find(q => q.id === p.buyTargetIds[i]);
+        if(selected) return selected.url;
+        const optionBranch = String.fromCharCode(97+i);
+        const target = p.type === 'upsell'
+          ? findNextUpsellPage(lastModel.pages, p, optionBranch)
+          : findNextFunnelPage(lastModel.pages, p, optionBranch);
+        return target ? target.url : thankYou;
+      });
+      p.buyTarget = p.buyTargets[0] || thankYou;
+    } else if(p.type === 'upsell'){
+      // Buying an upsell skips downsell pages; only a later upsell is a valid target.
+      p.buyTarget = nextUpsell ? nextUpsell.url : thankYou;
+    } else {
+      // A downsell continues to the next page in the resolved funnel order.
+      p.buyTarget = nextPage ? nextPage.url : thankYou;
+    }
+
+    // Every standalone No/Decline advances to the next page in funnel order.
+    p.declineTarget = nextDeclinePage ? nextDeclinePage.url : thankYou;
+    p.declineTargetRef = null;
+  });
+  lastModel.pages.filter(p => p.isPopup).forEach(p => {
+    const parent = lastModel.pages.find(u => u.type === 'upsell' && u.url === p.parentUpsellUrl);
+    const branch = parent ? stepVariantFor(parent) : stepVariantFor(p);
+    const nextUpsell = findNextUpsellPage(lastModel.pages, p, branch);
+    const nextPopup = lastModel.pages.find(q => q.isPopup && q.parentUpsellUrl === p.parentUpsellUrl && q.popupIndex === p.popupIndex + 1);
+    const nextPage = findNextNoThanksPage(lastModel.pages, p, branch);
+    p.buyTarget = nextUpsell ? nextUpsell.url : thankYou;
+    p.declineTargetRef = nextPopup || null;
+    p.declineTarget = nextPopup ? nextPopup.url : (nextPage ? nextPage.url : thankYou);
+  });
+  lastModel.pages.filter(p => p.type === 'upsell').forEach(p => {
+    const popup = lastModel.pages.find(q => q.isPopup && q.parentUpsellUrl === p.url);
+    if(popup){ p.declineTargetRef = popup; p.declineTarget = null; }
+  });
+}
+
+function setProductSplitDestination(sourceId, optionIndex, targetId){
+  if(!lastModel) return;
+  const source = lastModel.pages.find(p => p.id === sourceId);
+  const target = lastModel.pages.find(p => p.id === targetId);
+  if(!source || !target || target.type !== 'upsell' || source.id === target.id) return;
+  if(!source.splitByProduct || source.options.length < 2) return;
+
+  // If the destination is already in another product slot, swap the two pages.
+  let swapped = null;
+  lastModel.pages.some(other => {
+    if(!other.splitByProduct || !other.buyTargetIds) return false;
+    const otherIndex = other.buyTargetIds.findIndex((id, i) => id === target.id && !(other.id === source.id && i === optionIndex));
+    if(otherIndex < 0) return false;
+    swapped = {page: other, index: otherIndex};
+    return true;
+  });
+  source.buyTargetIds = source.buyTargetIds || source.options.map(() => null);
+  source.buyTargets = source.buyTargets || source.options.map(() => source.buyTarget || lastModel.thankYouUrl);
+  const priorId = source.buyTargetIds[optionIndex];
+  const priorPage = priorId && lastModel.pages.find(p => p.id === priorId);
+  source.buyTargetIds[optionIndex] = target.id;
+  source.buyTargets[optionIndex] = target.url;
+  if(swapped){
+    swapped.page.buyTargetIds[swapped.index] = priorId || null;
+    swapped.page.buyTargets[swapped.index] = priorPage ? priorPage.url : (swapped.page.splitFallbackTargets?.[swapped.index] || swapped.page.splitFallbackTarget || lastModel.thankYouUrl);
+  }
+  source.buyTarget = source.buyTargets[0] || lastModel.thankYouUrl;
+  syncSplitPageLabels();
+  renderFlow(lastModel, lastSettings.splitFunnel);
+  renderTable(lastModel);
+  renderOutput(lastSettings.accountId, lastSettings.token, lastSettings.lang, lastModel);
+  markDocumentDirty();
+}
+
+function handleCodenameDoubleClick(e){
+  const codenameEl = e.target.closest('.codename-editable');
+  if(!codenameEl) return;
+  const page = lastModel && lastModel.pages.find(p => p.id === codenameEl.dataset.pageId);
+  const index = Number(codenameEl.dataset.codenameIndex);
+  if(!page || !Number.isInteger(index) || index < 0 || index >= page.codenames.length) return;
+  const updated = window.prompt('Noul codename:', page.codenames[index]);
+  if(updated == null) return;
+  const value = updated.trim();
+  if(!value){ window.alert('Codename-ul nu poate fi gol.'); return; }
+  page.codenames[index] = value;
+  page.manualCodenames = page.manualCodenames || [];
+  page.manualCodenames[index] = true;
+  renderFlow(lastModel, lastSettings.splitFunnel);
+  renderTable(lastModel);
+  renderOutput(lastSettings.accountId, lastSettings.token, lastSettings.lang, lastModel);
+  markDocumentDirty();
+}
+
+function renderTable(model){
+  const table = document.getElementById('pageTable');
+  let html = `<tr><th>Page</th><th>Product</th><th>URL</th><th>Codenames</th><th>Buy → redirects to</th><th>Decline → goes to</th></tr>`;
+  model.pages.forEach(p => {
+    const editableCodename = (index, value) => `<span class="codename-editable" data-page-id="${p.id}" data-codename-index="${index}" title="${escapeHtml(codenameExplanation(p,index))} Double-click to edit">${escapeHtml(value)}</span>`;
+    p.skus = p.skus || p.codenames.map(() => '');
+    const codesHtml = p.codenames.map((code, i) => `<div>${!p.hasPacks && i === 0 ? '<span style="color:var(--red)">⚠ No pack info detected — </span>' : ''}${editableCodename(i, code)}<input class="sku-input" type="text" data-page-id="${p.id}" data-sku-index="${i}" value="${escapeHtml(p.skus[i] || '')}" placeholder="SKU (optional)" aria-label="SKU for ${escapeHtml(code)}"></div>`).join('');
+    const buyDisplay = p.buyTargets
+      ? p.buyTargets.map((t,i)=>`<div style="margin-bottom:2px"><small style="color:var(--amber)">[opt ${i+1}]</small> ${t||'—'}</div>`).join('')
+      : (p.buyTarget || '<span style="color:var(--red)">not set</span>');
+    const declineDisplay = p.declineTargetRef
+      ? labelFor(p.declineTargetRef)
+      : (p.isPopup ? (p.declineTarget || 'No next popup') : (p.declineTarget || '—'));
+    html += `<tr>
+      <td>${labelFor(p)}</td>
+      <td>${p.productNameUsed}</td>
+      <td class="url">${p.url}</td>
+      <td class="codes">${codesHtml}</td>
+      <td class="url">${buyDisplay}</td>
+      <td class="url">${declineDisplay}</td>
+    </tr>`;
+  });
+  table.innerHTML = html;
+  renderCodenameLegend(model);
+  if(!table.dataset.codenameEditBound){
+    table.dataset.codenameEditBound = 'true';
+    table.addEventListener('dblclick', handleCodenameDoubleClick);
+    table.addEventListener('input', event => {
+      const input = event.target.closest('.sku-input');
+      if(!input || !lastModel) return;
+      const page = lastModel.pages.find(p => p.id === input.dataset.pageId);
+      const index = Number(input.dataset.skuIndex);
+      if(page && Number.isInteger(index)){
+        page.skus = page.skus || [];
+        page.skus[index] = input.value.trim();
+        renderOutput(lastSettings.accountId, lastSettings.token, lastSettings.lang, lastModel);
+        markDocumentDirty();
+      }
+    });
+  }
+  const flowBox = document.getElementById('flowBox');
+  if(!flowBox.dataset.codenameEditBound){
+    flowBox.dataset.codenameEditBound = 'true';
+    flowBox.addEventListener('dblclick', handleCodenameDoubleClick);
+  }
+}
+
+function renderOutput(accountId, token, lang, model){
+  const sep = '_'.repeat(123);
+  let out = '';
+  out += `→ TRACKING CODE needs to be added in the <head> of every page.\n\n`;
+  out += `→ BUY LINKS need to be added directly on the button, not injected with javascript or php.\n\n`;
+  out += `→ buygoods DISCLAIMER must be on every page.\n\n`;
+  out += `<span id=disclaimer></span>\n<script src="https://display.buygoods.com/v1/disclaimer?id=disclaimer&account_id=${accountId}"><\/script>\n`;
+  out += sep + '\n';
+
+  model.pages.forEach(p => {
+    const currentId = labelFor(p);
+    out += `${currentId}\n`;
+    if(p.isPopup){
+      const trackingPage = model.pages.find(q => !q.isPopup && q.url === p.trackingPageUrl);
+      const nextPopup = p.declineTargetRef;
+      out += `Popup on ${trackingPage ? labelFor(trackingPage) : 'the inherited Upsell page'}\n\n`;
+      if(p.hasPacks){
+        p.options.forEach((count, i) => {
+          out += `${count} ${count === 1 ? 'Bottle' : 'Bottles'}\n\n`;
+          const sku = String(p.skus?.[i] || '').replace(/[\r\n]+/g, ' ').trim();
+          if(sku) out += `SKU: ${sku}\n\n`;
+          const redirect = (p.buyTargets && p.buyTargets[i] !== undefined) ? p.buyTargets[i] : p.buyTarget;
+          out += buildLink(accountId, p.codenames[i], redirect, p.type, lang) + '\n\n';
+        });
+      } else {
+        out += `⚠ No pack counts detected for this popup — add its product codename and buy link manually\n`;
+        out += `# Suggested codename prefix: ${p.codenames[0]} (replace TBD with actual bottle count)\n\n`;
+      }
+      out += `No/Decline → ${nextPopup ? labelFor(nextPopup) + ' (next popup)' : (p.declineTarget || p.buyTarget || '—')}\n`;
+      out += sep + '\n';
+      return;
+    }
+    out += `Tracking and Iframe and buy links for (${p.url})\n\n\n`;
+    out += `(Tracking)\n\n`;
+    out += trackingScript(accountId, trackingCodenamesFor(p, model)) + '\n\n';
+    out += iframeScript(accountId, token, p.type === 'main') + '\n\n\n';
+
+    if(p.hasPacks){
+      p.options.forEach((count, i) => {
+        out += `${count} ${count === 1 ? 'Bottle' : 'Bottles'}\n\n`;
+        const sku = String(p.skus?.[i] || '').replace(/[\r\n]+/g, ' ').trim();
+        if(sku) out += `SKU: ${sku}\n\n`;
+        const redirect = (p.buyTargets && p.buyTargets[i] !== undefined)
+          ? p.buyTargets[i]
+          : p.buyTarget;
+        out += buildLink(accountId, p.codenames[i], redirect, p.type, lang) + '\n\n';
+      });
+    } else {
+      out += `⚠ No pack counts detected for this page — add codenames and buy links manually\n`;
+      out += `# Suggested codename prefix: ${p.codenames[0]} (replace TBD with actual bottle count)\n\n`;
+    }
+
+    if(p.declineTargetRef && p.type === 'upsell'){
+      out += `No/Decline → ${labelFor(p.declineTargetRef)} (popup replaces the No Thank you button; no standalone URL)\n`;
+    } else if(p.declineTarget && p.type !== 'main'){
+      out += `No Thank you\n\n`;
+      out += p.declineTarget + '\n';
+    }
+    out += sep + '\n';
+  });
+
+  lastOutput = out;
+  document.getElementById('output').textContent = out;
+}
+
+function copyOutput(){
+  const outEl = document.getElementById('output');
+  const text = (outEl.innerText || outEl.textContent || '').trim();
+  if(!text) return;
+  navigator.clipboard.writeText(text).then(() => {
+    const msg = document.getElementById('copiedMsg');
+    msg.style.display = 'inline';
+    setTimeout(()=>{ msg.style.display = 'none'; }, 1800);
+  });
+}
+
+function downloadOutput(){
+  const outEl = document.getElementById('output');
+  const text = (outEl.innerText || outEl.textContent || '').trim();
+  if(!text) return;
+  const blob = new Blob([text], {type:'text/plain'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  const date = new Intl.DateTimeFormat('en-GB', {timeZone:'Europe/Bucharest',day:'2-digit',month:'2-digit',year:'numeric'}).format(new Date()).replace(/\//g, '-');
+  const safe = value => String(value || '').trim().normalize('NFKD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-zA-Z0-9]+/g, '-').replace(/^-+|-+$/g, '') || 'document';
+  a.download = `${safe(document.getElementById('productName').value)}-${safe(document.getElementById('accountId').value)}-${date}.txt`;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+// ── Tooltip image handler ────────────────────────────────────────────────
+(function(){
+  const popup = document.createElement('div');
+  popup.id = 'tip-popup';
+  popup.innerHTML = '<img alt="">';
+  document.body.appendChild(popup);
+
+  document.addEventListener('mouseover', function(e){
+    const icon = e.target.closest('.tip-icon');
+    if(!icon){ popup.style.display='none'; return; }
+    const src = icon.dataset.img || '';
+    popup.querySelector('img').src = src;
+    popup.style.display = 'block';
+  });
+  document.addEventListener('mousemove', function(e){
+    if(popup.style.display==='none') return;
+    const x = e.clientX + 16, y = e.clientY + 16;
+    popup.style.left = Math.min(x, window.innerWidth  - 290) + 'px';
+    popup.style.top  = Math.min(y, window.innerHeight - 210) + 'px';
+  });
+  document.addEventListener('mouseout', function(e){
+    const to = e.relatedTarget;
+    if(!to || !to.closest || !to.closest('.tip-icon')) popup.style.display = 'none';
+  });
+})();
+</script>
+</body>
+</html>
