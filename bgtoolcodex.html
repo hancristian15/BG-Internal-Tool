@@ -29,6 +29,41 @@
   @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap');
 
   .wrap{max-width:1040px;margin:0 auto;padding:40px 24px 80px;}
+  .tool-navbar{display:flex;justify-content:space-between;align-items:center;gap:16px;margin-bottom:28px;padding:8px;border:1px solid var(--line);border-radius:12px;background:var(--panel);box-shadow:0 8px 28px rgba(0,0,0,.16);}
+  .tool-nav-btn{display:flex;align-items:center;gap:11px;min-height:48px;padding:8px 15px;border:1px solid transparent;border-radius:8px;background:transparent;color:var(--muted);font:600 13px var(--sans);cursor:pointer;transition:all .18s ease;}
+  .tool-nav-btn:hover{color:var(--text);background:var(--panel-2);}
+  .tool-nav-btn[aria-pressed="true"]{border-color:var(--line);background:var(--panel-2);color:var(--text);box-shadow:0 2px 8px rgba(0,0,0,.12);}
+  .tool-nav-mark{display:grid;place-items:center;width:29px;height:29px;border-radius:8px;background:var(--amber);color:#17140a;font:700 12px var(--mono);}
+  .tool-nav-subtitle{display:block;margin-top:2px;color:var(--muted);font-size:10px;font-weight:400;text-align:left;}
+  .tool-nav-right{display:flex;justify-content:flex-end;flex:1;}
+  body.affiliate-theme{--bg:#f1f4ff;--panel:#fff;--panel-2:#e9edff;--line:#d3daf2;--text:#19264b;--muted:#687596;--amber:#435ee8;--lime:#087c5e;--red:#c6374f;}
+  body.affiliate-theme .tool-navbar{box-shadow:0 10px 32px rgba(44,63,140,.10);}
+  body.affiliate-theme .tool-nav-mark{color:#fff;}
+  .app-view[hidden]{display:none!important;}
+  .affiliate-hero{display:flex;align-items:flex-start;gap:17px;margin:8px 0 26px;}
+  .affiliate-hero-mark{display:grid;place-items:center;width:48px;height:48px;flex:0 0 48px;border-radius:14px;background:linear-gradient(145deg,#667cf5,#334cd1);color:white;font:700 18px var(--mono);box-shadow:0 9px 22px rgba(65,89,220,.25);}
+  .affiliate-hero h1{margin:0 0 5px;font-size:26px;letter-spacing:-.03em;color:var(--text);}
+  .affiliate-hero p{margin:0;color:var(--muted);font-size:13px;max-width:650px;}
+  .affiliate-checker{max-width:760px;margin:0 auto;padding:26px;background:var(--panel);border:1px solid var(--line);border-radius:15px;box-shadow:0 18px 50px rgba(44,63,140,.10);}
+  .affiliate-checker h2{margin:0 0 7px;color:var(--text);font-size:16px;}
+  .affiliate-checker .hint{margin-bottom:18px;}
+  .affiliate-form{display:flex;gap:10px;align-items:stretch;}
+  .affiliate-form input{flex:1;min-width:0;}
+  .affiliate-form .btn-primary{white-space:nowrap;background:#435ee8;border-color:#435ee8;color:white;}
+  .affiliate-form .btn-primary:hover{background:#344cc9;border-color:#344cc9;}
+  .affiliate-result{margin-top:18px;padding:17px;border:1px solid var(--line);border-radius:11px;background:var(--panel-2);}
+  .affiliate-result[hidden]{display:none!important;}
+  .affiliate-result-title{margin-bottom:13px;font-size:15px;font-weight:700;}
+  .affiliate-result-title.good{color:var(--lime);}
+  .affiliate-result-title.bad{color:var(--red);}
+  .affiliate-check-list{display:grid;gap:8px;}
+  .affiliate-check-row{display:flex;align-items:center;gap:10px;font-size:13px;color:var(--text);}
+  .affiliate-check-icon{display:grid;place-items:center;width:21px;height:21px;flex:0 0 21px;border-radius:50%;font-size:12px;font-weight:800;}
+  .affiliate-check-row.good .affiliate-check-icon{background:rgba(8,124,94,.13);color:var(--lime);}
+  .affiliate-check-row.bad .affiliate-check-icon{background:rgba(198,55,79,.12);color:var(--red);}
+  .affiliate-checked-url{margin-top:12px;color:var(--muted);font:11px var(--mono);overflow-wrap:anywhere;}
+  body.affiliate-theme .err{background:#fff0f2;color:#92263a;border-color:#e5a1ac;}
+  @media(max-width:600px){.tool-navbar{gap:5px;padding:5px}.tool-nav-btn{gap:7px;padding:7px;font-size:11px}.tool-nav-mark{width:25px;height:25px}.affiliate-form{flex-direction:column}.affiliate-checker{padding:18px}.affiliate-hero h1{font-size:21px}}
   header{margin-bottom:32px;border-bottom:1px solid var(--line);padding-bottom:24px;}
   header .tag{font-family:var(--mono);font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:var(--amber);}
   header h1{font-size:28px;margin:8px 0 6px;font-weight:700;}
@@ -116,10 +151,27 @@
   .tip-icon{display:inline-flex;align-items:center;justify-content:center;width:14px;height:14px;border-radius:50%;background:rgba(139,144,160,.35);color:var(--text);font-size:9px;font-weight:700;cursor:help;vertical-align:middle;margin-left:5px;flex-shrink:0;font-family:var(--sans);line-height:1;border:1px solid rgba(139,144,160,.3);transition:background .15s;}
   .tip-icon:hover{background:var(--amber);color:#1a1407;border-color:var(--amber);}
   #tip-popup{position:fixed;z-index:9999;border:1px solid var(--line);border-radius:8px;background:var(--panel);padding:6px;display:none;pointer-events:none;box-shadow:0 8px 24px rgba(0,0,0,.55);}
-  #tip-popup img{display:block;max-width:260px;max-height:180px;border-radius:4px;}
+  #tip-popup img{display:block;width:auto;height:auto;max-width:none;max-height:none;border-radius:4px;}
   .empty{color:var(--muted);font-size:13px;padding:30px 0;text-align:center;}
   .copied{color:var(--lime);font-size:12px;margin-left:10px;font-family:var(--mono);}
   .err{background:#2a1a1c;border:1px solid var(--red);color:#ffb3b8;border-radius:6px;padding:12px 14px;font-size:13px;margin-bottom:16px;}
+  .doc-search-row{display:flex;gap:10px;align-items:center;}
+  .doc-search-row input{flex:1;min-width:160px;}
+  .doc-results{display:grid;gap:8px;margin-top:12px;}
+  .doc-card{display:flex;justify-content:space-between;align-items:center;gap:14px;padding:12px;background:var(--panel-2);border:1px solid var(--line);border-radius:7px;}
+  .doc-card-title{font-family:var(--mono);font-size:12px;}
+  .doc-card-meta,.doc-status{font-size:11px;color:var(--muted);margin-top:4px;}
+  .doc-card-actions{display:flex;gap:7px;flex-shrink:0;}
+  .doc-card-actions button,.doc-card-actions a{font-size:11px;padding:7px 10px;text-decoration:none;}
+  .sku-input{display:block;width:112px;margin:5px 0 2px;background:var(--panel-2);border:1px solid var(--line);border-radius:4px;color:var(--text);padding:5px 7px;font-family:var(--mono);font-size:10px;}
+  .doc-status a{color:var(--lime);}
+  .modal-backdrop{position:fixed;inset:0;z-index:10000;background:rgba(0,0,0,.72);display:flex;align-items:center;justify-content:center;padding:20px;}
+  .modal{width:min(560px,100%);background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:22px;box-shadow:0 18px 60px rgba(0,0,0,.5);}
+  .modal h2{margin:0 0 8px;color:var(--text);}
+  .modal p{color:var(--muted);font-size:13px;}
+  .modal-actions{display:flex;gap:9px;justify-content:flex-end;flex-wrap:wrap;margin-top:18px;}
+  .shared-output{white-space:pre-wrap;overflow-wrap:anywhere;background:var(--panel-2);border:1px solid var(--line);border-radius:6px;padding:16px;font-family:var(--mono);font-size:11.5px;max-height:70vh;overflow:auto;}
+  @media(max-width:600px){.doc-search-row,.doc-card{align-items:stretch;flex-direction:column}.doc-card-actions{justify-content:flex-start}}
   select{
     width:100%;background:var(--panel-2);border:1px solid var(--line);border-radius:6px;
     color:var(--text);padding:10px 12px;font-family:var(--mono);font-size:13px;cursor:pointer;
@@ -135,6 +187,17 @@
 </head>
 <body>
 <div class="wrap">
+  <nav class="tool-navbar" aria-label="BuyGoods tools">
+    <button class="tool-nav-btn" id="builderNav" type="button" aria-pressed="true">
+      <span class="tool-nav-mark">FB</span><span>BuyGoods Funnel Builder<span class="tool-nav-subtitle">Offer flows &amp; documents</span></span>
+    </button>
+    <div class="tool-nav-right">
+      <button class="tool-nav-btn" id="affiliateManagerNav" type="button" aria-pressed="false">
+        <span>BuyGoods Affiliate Manager Tool<span class="tool-nav-subtitle">Tracking verification</span></span><span class="tool-nav-mark">AM</span>
+      </button>
+    </div>
+  </nav>
+  <main class="app-view" id="builderView">
 
   <header>
     <div class="tag">// internal tool</div>
@@ -142,30 +205,62 @@
     <p>Paste an offer flow (Main page / Upsell N / Downsell N + URLs + pack pricing), set the account ID and product name, and get back tracking scripts, conversion iframes, and buy links for every step — formatted like the integration doc.</p>
   </header>
 
+  <div class="panel" id="savedDocumentsPanel">
+    <h2>Saved documents</h2>
+    <div class="doc-search-row">
+      <input type="text" id="documentSearch" placeholder="Type an account ID prefix or product name" autocomplete="off">
+    </div>
+    <div class="hint">Results update as you type. Numeric searches match account IDs that start with those digits; other searches match product names.</div>
+    <div id="documentResults" class="doc-results"></div>
+  </div>
+
+  <div class="panel" id="sharedPreviewPanel" style="display:none;">
+    <h2>Shared document preview</h2>
+    <div id="sharedDocumentMeta" class="doc-status"></div>
+    <div class="actions">
+      <button class="btn-ghost" onclick="returnFromSharedPreview()">Back to builder</button>
+      <button class="btn-ghost" onclick="copyShareLink()">Copy share URL</button>
+    </div>
+    <pre id="sharedDocumentOutput" class="shared-output"></pre>
+  </div>
+
+  <div class="modal-backdrop" id="duplicateModal" style="display:none;">
+    <div class="modal" role="dialog" aria-modal="true" aria-labelledby="duplicateTitle">
+      <h2 id="duplicateTitle">Document already saved</h2>
+      <p id="duplicateMessage"></p>
+      <div id="duplicateChoices"></div>
+      <div class="modal-actions">
+        <button class="btn-ghost" onclick="closeDuplicateDialog()">Cancel</button>
+        <button class="btn-ghost" onclick="saveCurrentAsSecondDocument()">Save this as a second document</button>
+        <button class="btn-primary" onclick="editExistingDuplicate()">Open existing to edit</button>
+      </div>
+    </div>
+  </div>
+
   <div class="panel">
     <h2>Setup</h2>
     <div class="grid">
       <div class="field">
-        <label for="accountId">Account ID * <span class="tip-icon" data-img="IMAGE1">?</span></label>
-        <input type="text" id="accountId" placeholder="e.g. 12665">
+        <label for="accountId">Account ID * <span class="tip-icon" data-img="assets/accountid.png">?</span></label>
+        <input type="text" id="accountId" placeholder="e.g. 12665" inputmode="numeric" maxlength="5" pattern="[0-9]{5}" autocomplete="off">
       </div>
       <div class="field">
-        <label for="productName">Product name * <span class="tip-icon" data-img="IMAGE2">?</span></label>
+        <label for="productName">Product name * <span class="tip-icon" data-img="assets/offername.png">?</span></label>
         <input type="text" id="productName" placeholder="e.g. RetraSlim">
         <div class="hint">First 3 letters → codename prefix (e.g. "RetraSlim" → ret). Used as fallback if the offer flow text doesn't specify a product name per page — if it does (e.g. "GlucoVital - 6 packs…"), that name takes priority.</div>
       </div>
       <div class="field">
-        <label for="token">Affiliate token (iframe "t" param) — optional <span class="tip-icon" data-img="IMAGE3">?</span></label>
+        <label for="token">Affiliate token (iframe "t" param) — optional <span class="tip-icon" data-img="assets/afftoken.png">?</span></label>
         <input type="text" id="token" placeholder="aa90d7127be44d23c555a7ba130fd20a">
         <div class="hint">Leave blank to insert a placeholder you can fill in later.</div>
       </div>
       <div class="field">
-        <label for="thankYou">Thank you page URL — optional <span class="tip-icon" data-img="IMAGE4">?</span></label>
+        <label for="thankYou">Thank you page URL — optional </label>
         <input type="text" id="thankYou" placeholder="https://yourdomain.com/thank-you/">
         <div class="hint">Leave blank to default to https://buygoods.com/thankyou?account_id=YOUR_ACCOUNT_ID</div>
       </div>
       <div class="field">
-        <label for="lang">Language (lang= param in buy links) <span class="tip-icon" data-img="IMAGE5">?</span></label>
+        <label for="lang">Language (lang= param in buy links) <span class="tip-icon" data-img="assets/lang.png">?</span></label>
         <select id="lang">
           <option value="en">en — English</option>
           <option value="fr">fr — French</option>
@@ -175,8 +270,8 @@
         </select>
       </div>
       <div class="field" style="display:flex;align-items:flex-end;padding-bottom:2px;">
-      <div class="d-none">
-          <label style="margin-bottom:8px;">Split funnel mode <span class="tip-icon" data-img="IMAGE6">?</span></label>
+      <div style="display:none;">
+          <label style="margin-bottom:8px;">Split funnel mode</label>
           <button class="toggle-btn" id="splitToggle" onclick="toggleSplit()">Split Funnel: OFF</button>
           <div class="hint" style="margin-top:8px;">When ON, use letter suffixes in labels: "Upsell 1 a" routes buyers of option 1, "Upsell 1 b" routes buyers of option 2, etc. The main page buy links will then redirect each product to its own variant branch.</div>
         </div>
@@ -185,7 +280,7 @@
   </div>
 
   <div class="panel">
-    <h2>Offer flow (paste here) <span class="tip-icon" data-img="IMAGE7">?</span></h2>
+    <h2>Offer flow (paste here) <span class="tip-icon" data-img="assets/flow.png">?</span></h2>
     <div class="field">
       <textarea id="offerFlow" placeholder="Main page: https://retraslim.app/index?f=89s6iw&fnid=54&pfnid=1
 (RetraSlim - 2 packs for $158 - $79 each, 3 packs for $207 - $69 each, 6 packs for $294 - $49 each)
@@ -201,7 +296,7 @@ Downsell 1: https://retraslim.app/orderdw1-v1?f=89s6iw&fnid=19&pfnid=17
       <div class="hint">Paste the compliance document here. No changes needed! </div>
     </div>
     <div class="actions">
-      <button class="btn-primary" onclick="recordGenerateClick(); generate()">Generate funnel</button>
+      <button class="btn-primary" onclick="handleGenerateClick()">Generate funnel</button>
       <button class="btn-ghost" onclick="loadSample()">Load sample</button>
     </div>
   </div>
@@ -222,16 +317,41 @@ Downsell 1: https://retraslim.app/orderdw1-v1?f=89s6iw&fnid=19&pfnid=17
   <div class="panel" id="outputPanel" style="display:none;">
     <h2>Generated output</h2>
     <div class="actions" style="margin-top:0;margin-bottom:14px;">
+      <button class="btn-ghost" onclick="previewOutput()">Preview</button>
       <button class="btn-ghost" onclick="copyOutput()">Copy to clipboard</button>
       <button class="btn-ghost" onclick="downloadOutput()">Download .txt</button>
+      <button class="btn-ghost" id="saveDocumentButton" onclick="saveDocumentChanges()" style="display:none;">Save changes</button>
       <span id="copiedMsg" class="copied" style="display:none;">Copied ✓</span>
     </div>
+    <div id="documentSaveStatus" class="doc-status"></div>
     <div class="output-hint">✏ Output is editable — click to modify before copying or downloading.</div><div id="output" contenteditable="true" spellcheck="false"></div>
   </div>
 
   <div class="panel" id="emptyPanel">
     <div class="empty">Nothing generated yet. Fill in the setup fields, paste your offer flow, and click "Generate funnel".</div>
   </div>
+  </main>
+
+  <main class="app-view" id="affiliateManagerView" hidden>
+    <header class="affiliate-hero">
+      <div class="affiliate-hero-mark">AM</div>
+      <div><div class="tag">// affiliate operations</div><h1>BuyGoods Affiliate Manager Tool</h1><p>Check a live offer page for the BuyGoods tracking snippet and the parameters added to its checkout links.</p></div>
+    </header>
+    <section class="affiliate-checker" aria-labelledby="trackingCheckerTitle">
+      <h2 id="trackingCheckerTitle">Verify tracking</h2>
+      <div class="hint">Enter the public landing page URL. The page will be opened in a clean browser so its scripts can run before the links are checked.</div>
+      <form class="affiliate-form" id="trackingVerifyForm">
+        <input type="url" id="trackingPageUrl" placeholder="https://yourdomain.com/offer" autocomplete="url" required>
+        <button class="btn-primary" id="verifyTrackingButton" type="submit">Verify Tracking</button>
+      </form>
+      <div class="doc-status" id="trackingVerifyStatus" role="status" aria-live="polite"></div>
+      <div class="affiliate-result" id="trackingVerifyResult" aria-live="polite" hidden>
+        <div class="affiliate-result-title" id="trackingVerifyHeadline"></div>
+        <div class="affiliate-check-list" id="trackingVerifyChecks"></div>
+        <div class="affiliate-checked-url" id="trackingCheckedUrl"></div>
+      </div>
+    </section>
+  </main>
 
 </div>
 
@@ -239,6 +359,9 @@ Downsell 1: https://retraslim.app/orderdw1-v1?f=89s6iw&fnid=19&pfnid=17
 let lastModel = null;
 let lastOutput = "";
 let lastSettings = null;
+let editingDocumentId = null;
+let pendingDuplicateDocuments = [];
+let pendingDocumentContext = null;
 async function recordGenerateClick(){
   try {
     const response = await fetch('/api/generate-clicks', {method:'POST'});
@@ -498,6 +621,7 @@ function buildModel(pages, productName, thankYouUrl, accountId, splitFunnel){
     return {
       type: p.type, num: p.num, variant: p.variant, popupIndex:p.popupIndex || null, isPopup:!!p.isPopup, parentUpsellUrl:p.parentUpsellUrl || null, trackingPageUrl:p.trackingPageUrl || null, sourceDownsellNum:p.sourceDownsellNum || null, blockProductName:p.blockProductName || null,
       url: p.url, codenames, options, suffix,
+      skus: options.map(() => ''),
       productNameUsed, codenamePrefix:pagePrefix,
       hasPacks: options.length > 0,
       buyTarget, buyTargets, declineTarget
@@ -574,24 +698,30 @@ function generate(){
   const thankYouUrl = document.getElementById('thankYou').value.trim();
   const offerFlowRaw = document.getElementById('offerFlow').value.trim();
   const lang = document.getElementById('lang').value;
-  const splitFunnel = document.getElementById('splitToggle').classList.contains('on');
+  const splitToggle = document.getElementById('splitToggle');
+    const splitFunnel = !!splitToggle?.classList.contains('on');
 
-  if(!accountId || !productName || !offerFlowRaw){
-    errorBox.innerHTML = '<div class="err">Account ID, product name, and the offer flow text are all required.</div>';
-    return;
+  if(!/^\d{5}$/.test(accountId)){
+    errorBox.innerHTML = '<div class="err">Account ID must contain exactly 5 digits.</div>';
+    return false;
+  }
+  if(!productName || !offerFlowRaw){
+    errorBox.innerHTML = '<div class="err">Product name and the offer flow text are required.</div>';
+    return false;
   }
 
   const pages = parseOfferFlow(offerFlowRaw);
   if(pages.length === 0){
     errorBox.innerHTML = '<div class="err">Couldn\'t find any "Main page / Upsell N / Downsell N: URL" patterns in the pasted text. Check the format against the placeholder example.</div>';
-    return;
+    return false;
   }
 
   const model = buildModel(pages, productName, thankYouUrl, accountId, splitFunnel);
-  model.pages.forEach((p, i) => { p.id = `page-${i}`; p.originalNum = p.num; p.originalDownsellNum = p.sourceDownsellNum; p.originalLabel = labelFor(p); });
+  model.pages.forEach((p, i) => { p.id = `page-${i}`; p.originalNum = p.num; p.originalDownsellNum = p.sourceDownsellNum; });
   lastModel = model;
   lastSettings = {accountId, token, lang, splitFunnel};
   syncSplitPageLabels();
+  model.pages.forEach(p => { p.originalLabel = labelFor(p); });
 
   renderFlow(model, splitFunnel);
   renderTable(model);
@@ -601,7 +731,269 @@ function generate(){
   document.getElementById('flowPanel').style.display = 'block';
   document.getElementById('tablePanel').style.display = 'block';
   document.getElementById('outputPanel').style.display = 'block';
+  document.getElementById('saveDocumentButton').style.display = 'inline-block';
+  return true;
 }
+
+async function handleGenerateClick(){
+  recordGenerateClick();
+  if(!generate()) return;
+  try {
+    await handleGeneratedDocument();
+  } catch(error) {
+    setDocumentStatus(`Generated locally, but could not save the document: ${error.message}`, true);
+  }
+}
+
+function setDocumentStatus(message, isError = false, shareToken = ''){
+  const status = document.getElementById('documentSaveStatus');
+  if(!status) return;
+  status.className = `doc-status${isError ? ' err' : ''}`;
+  if(shareToken){
+    const link = makeShareUrl(shareToken);
+    status.innerHTML = `${escapeHtml(message)} · <a href="${escapeHtml(link)}" target="_blank" rel="noopener">Preview/share link</a>`;
+  } else status.textContent = message;
+}
+
+function markDocumentDirty(){
+  const button = document.getElementById('saveDocumentButton');
+  if(button) button.style.display = 'inline-block';
+  setDocumentStatus('Unsaved changes.');
+}
+
+async function apiJson(url, options){
+  const response = await fetch(url, options);
+  const body = await response.json().catch(() => ({}));
+  if(!response.ok) throw Object.assign(new Error(body.error || `Request failed (${response.status})`), {status:response.status, body});
+  return body;
+}
+
+function currentProducts(){
+  if(!lastModel) return [];
+  return lastModel.pages.flatMap(page => page.codenames.map((codename, index) => ({
+    step:labelFor(page), productName:page.productNameUsed || lastSettings.productName,
+    bottles:page.options[index] ?? null, codename, sku:String(page.skus?.[index] || '').trim(),
+    pageType:page.type, isPopup:!!page.isPopup, url:page.url
+  })));
+}
+
+function currentBuilderState(){
+  const accountId = document.getElementById('accountId').value.trim();
+  const productName = document.getElementById('productName').value.trim();
+  const token = document.getElementById('token').value.trim();
+  const thankYouUrl = document.getElementById('thankYou').value.trim();
+  const offerFlow = document.getElementById('offerFlow').value;
+  const lang = document.getElementById('lang').value;
+  const splitFunnel = !!document.getElementById('splitToggle')?.classList.contains('on');
+  return {
+    accountId, productName, token, thankYouUrl, offerFlow, lang, splitFunnel,
+    thankYouUrlResolved:lastModel?.thankYouUrl || '', fallbackProductName:lastModel?.fallbackProductName || productName,
+    pages:lastModel?.pages.map(page => JSON.parse(JSON.stringify(page))) || []
+  };
+}
+
+async function handleGeneratedDocument(){
+  if(location.protocol === 'file:'){
+    setDocumentStatus('Document saving is available when the tool is opened from its Vercel URL.');
+    return;
+  }
+  if(editingDocumentId){
+    await saveCurrentDocument({id:editingDocumentId});
+    return;
+  }
+  const accountId = document.getElementById('accountId').value.trim();
+  const productName = document.getElementById('productName').value.trim();
+  const params = new URLSearchParams({action:'duplicates', accountId, productName});
+  const result = await apiJson(`/api/documents?${params}`);
+  if(result.documents?.length){
+    pendingDuplicateDocuments = result.documents;
+    pendingDocumentContext = {accountId, productName};
+    showDuplicateDialog();
+    return;
+  }
+  await saveCurrentDocument();
+}
+
+function showDuplicateDialog(){
+  const docs = pendingDuplicateDocuments;
+  document.getElementById('duplicateMessage').textContent = `A saved document already exists for account ${pendingDocumentContext.accountId} and product ${pendingDocumentContext.productName}. Choose whether to open the existing document or save this generation as another document.`;
+  document.getElementById('duplicateChoices').innerHTML = `<div class="doc-results">${docs.map(doc => `<div class="doc-card"><div><div class="doc-card-title">${escapeHtml(doc.document_name)}</div><div class="doc-card-meta">Created ${formatDocumentDate(doc.created_at)}</div></div><div class="doc-card-actions"><a class="btn-ghost" href="${escapeHtml(makeShareUrl(doc.share_token))}" target="_blank" rel="noopener">Preview</a></div></div>`).join('')}</div>`;
+  document.getElementById('duplicateModal').style.display = 'flex';
+}
+
+function closeDuplicateDialog(){
+  document.getElementById('duplicateModal').style.display = 'none';
+}
+
+async function editExistingDuplicate(){
+  const documentToEdit = pendingDuplicateDocuments[0];
+  if(!documentToEdit) return closeDuplicateDialog();
+  closeDuplicateDialog();
+  await loadSavedDocument(documentToEdit.id);
+}
+
+async function saveCurrentAsSecondDocument(){
+  closeDuplicateDialog();
+  editingDocumentId = null;
+  try { await saveCurrentDocument({allowDuplicate:true}); }
+  catch(error) { setDocumentStatus(`Could not save second document: ${error.message}`, true); }
+}
+
+async function saveCurrentDocument({id = null, allowDuplicate = false} = {}){
+  setDocumentStatus('Saving document…');
+  const result = await apiJson('/api/documents?action=save', {
+    method:'POST', headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({
+      id, allowDuplicate,
+      accountId:document.getElementById('accountId').value.trim(),
+      productName:document.getElementById('productName').value.trim(),
+      builderState:currentBuilderState(), products:currentProducts(),
+      output:(document.getElementById('output').innerText || document.getElementById('output').textContent || '').trim()
+    })
+  });
+  editingDocumentId = result.id;
+  document.getElementById('saveDocumentButton').style.display = 'inline-block';
+  const label = id ? 'Updated' : 'Saved';
+  setDocumentStatus(`${label}: ${result.documentName}`, false, result.shareToken);
+  return result;
+}
+
+async function saveDocumentChanges(){
+  try {
+    if(editingDocumentId) await saveCurrentDocument({id:editingDocumentId});
+    else await handleGeneratedDocument();
+  } catch(error) {
+    setDocumentStatus(`Could not save document: ${error.message}`, true);
+  }
+}
+
+function formatDocumentDate(value){
+  const date = new Date(value);
+  if(Number.isNaN(date.getTime())) return 'unknown date';
+  return new Intl.DateTimeFormat('en-GB', {timeZone:'Europe/Bucharest',day:'2-digit',month:'2-digit',year:'numeric'}).format(date);
+}
+
+function makeShareUrl(token){
+  const share = new URL(window.location.href);
+  share.search = '';
+  share.hash = '';
+  share.searchParams.set('share', token);
+  return share.toString();
+}
+
+let documentSearchTimer = null;
+let documentSearchSequence = 0;
+
+async function searchSavedDocuments(){
+  const query = document.getElementById('documentSearch').value.trim();
+  const results = document.getElementById('documentResults');
+  const requestSequence = ++documentSearchSequence;
+  if(!query){ results.innerHTML = ''; return; }
+  results.textContent = 'Searching…';
+  try {
+    const data = await apiJson(`/api/documents?action=search&q=${encodeURIComponent(query)}`);
+    if(requestSequence !== documentSearchSequence) return;
+    if(!data.documents?.length){ results.innerHTML = '<div class="doc-status">No saved documents found.</div>'; return; }
+    results.innerHTML = data.documents.map(doc => `<div class="doc-card"><div><div class="doc-card-title">${escapeHtml(doc.document_name)}</div><div class="doc-card-meta">Account ${escapeHtml(doc.account_id)} · ${escapeHtml(doc.product_name)} · Created ${formatDocumentDate(doc.created_at)}</div></div><div class="doc-card-actions"><a class="btn-ghost" href="${escapeHtml(makeShareUrl(doc.share_token))}" target="_blank" rel="noopener">Preview</a><button class="btn-primary" onclick="loadSavedDocument('${escapeHtml(doc.id)}')">Edit</button></div></div>`).join('');
+  } catch(error) {
+    if(requestSequence === documentSearchSequence) results.textContent = `Search failed: ${error.message}`;
+  }
+}
+
+async function loadSavedDocument(id){
+  try {
+    const {document:doc} = await apiJson(`/api/documents?action=get&id=${encodeURIComponent(id)}`);
+    const state = doc.builder_state;
+    if(!state || !Array.isArray(state.pages)) throw new Error('Saved builder data is missing.');
+    document.getElementById('accountId').value = state.accountId || doc.account_id;
+    document.getElementById('productName').value = state.productName || doc.product_name;
+    document.getElementById('token').value = state.token || '';
+    document.getElementById('thankYou').value = state.thankYouUrl || '';
+    document.getElementById('offerFlow').value = state.offerFlow || '';
+    document.getElementById('lang').value = state.lang || 'en';
+    document.getElementById('splitToggle')?.classList.toggle('on', !!state.splitFunnel);
+    if(document.getElementById('splitToggle')) document.getElementById('splitToggle').textContent = state.splitFunnel ? 'Split Funnel: ON' : 'Split Funnel: OFF';
+    lastModel = {pages:state.pages.map(page => JSON.parse(JSON.stringify(page))), thankYouUrl:state.thankYouUrlResolved || '', fallbackProductName:state.fallbackProductName || state.productName};
+    lastSettings = {accountId:state.accountId || doc.account_id, productName:state.productName || doc.product_name, token:state.token || '', lang:state.lang || 'en', splitFunnel:!!state.splitFunnel};
+    editingDocumentId = doc.id;
+    syncSplitPageLabels();
+    renderFlow(lastModel, lastSettings.splitFunnel);
+    renderTable(lastModel);
+    renderOutput(lastSettings.accountId, lastSettings.token, lastSettings.lang, lastModel);
+    if(typeof doc.output === 'string'){
+      document.getElementById('output').textContent = doc.output;
+      lastOutput = doc.output;
+    }
+    document.getElementById('emptyPanel').style.display = 'none';
+    document.getElementById('flowPanel').style.display = 'block';
+    document.getElementById('tablePanel').style.display = 'block';
+    document.getElementById('outputPanel').style.display = 'block';
+    setDocumentStatus(`Editing saved document: ${doc.document_name} · created ${formatDocumentDate(doc.created_at)}`, false, doc.share_token);
+    window.scrollTo({top:0, behavior:'smooth'});
+  } catch(error) {
+    setDocumentStatus(`Could not open document: ${error.message}`, true);
+  }
+}
+
+async function copyShareLink(){
+  try { await navigator.clipboard.writeText(window.location.href); }
+  catch(error) { window.prompt('Copy this share URL:', window.location.href); }
+}
+
+function returnFromSharedPreview(){
+  const url = new URL(window.location.href);
+  url.searchParams.delete('share');
+  window.location.assign(url.toString());
+}
+
+async function loadSharedPreview(token){
+  const previewPanel = document.getElementById('sharedPreviewPanel');
+  const builderView = document.getElementById('builderView');
+  const affiliateView = document.getElementById('affiliateManagerView');
+  const toolNav = document.querySelector('.tool-navbar');
+  if(toolNav) toolNav.style.display = 'none';
+  builderView.hidden = false;
+  affiliateView.hidden = true;
+  Array.from(builderView.children).forEach(child => {
+    child.style.display = child === previewPanel ? 'block' : 'none';
+  });
+  previewPanel.style.display = 'block';
+  const meta = document.getElementById('sharedDocumentMeta');
+  const output = document.getElementById('sharedDocumentOutput');
+  meta.textContent = 'Loading document…';
+  try {
+    const data = await apiJson(`/api/documents?action=share&token=${encodeURIComponent(token)}`);
+    document.title = data.documentName;
+    meta.textContent = `${data.documentName} · Created ${formatDocumentDate(data.createdAt)}`;
+    output.textContent = data.output;
+  } catch(error) {
+    meta.textContent = 'Could not load this shared document.';
+    output.textContent = error.message;
+  }
+}
+
+function initializeDocumentUi(){
+  const search = document.getElementById('documentSearch');
+  search?.addEventListener('input', () => {
+    documentSearchSequence += 1;
+    clearTimeout(documentSearchTimer);
+    if(!search.value.trim()){
+      document.getElementById('documentResults').innerHTML = '';
+      return;
+    }
+    documentSearchTimer = setTimeout(searchSavedDocuments, 250);
+  });
+  const accountId = document.getElementById('accountId');
+  accountId?.addEventListener('input', () => {
+    const digits = accountId.value.replace(/\D/g, '').slice(0, 5);
+    if(accountId.value !== digits) accountId.value = digits;
+  });
+  document.getElementById('output')?.addEventListener('input', markDocumentDirty);
+  const token = new URLSearchParams(window.location.search).get('share');
+  if(token) loadSharedPreview(token);
+}
+
+initializeDocumentUi();
 
 function stepNumFor(p){ return p.assignedLabel ? p.assignedLabel.num : p.num; }
 function stepVariantFor(p){ return p.assignedLabel ? p.assignedLabel.variant : p.variant; }
@@ -616,6 +1008,38 @@ function findNextFunnelPage(pages, source, branch){
     if(branch ? (candidateBranch === branch || !candidateBranch) : !candidateBranch) return candidate;
   }
   return null;
+}
+
+function findNextUpsellPage(pages, source, branch){
+  const start = pages.indexOf(source);
+  if(start < 0) return null;
+  for(let i=start+1; i<pages.length; i++){
+    const candidate = pages[i];
+    if(candidate.type !== 'upsell' || candidate.isPopup) continue;
+    const candidateBranch = stepVariantFor(candidate);
+    if(branch ? (candidateBranch === branch || !candidateBranch) : !candidateBranch) return candidate;
+  }
+  return null;
+}
+
+function findNextDownsellPage(pages, branch){
+  return pages.find(candidate => {
+    if(candidate.type !== 'downsell' || candidate.isPopup) return false;
+    const candidateBranch = stepVariantFor(candidate);
+    return branch ? (candidateBranch === branch || !candidateBranch) : !candidateBranch;
+  }) || null;
+}
+
+function findNextNoThanksPage(pages, source, branch){
+  if(source.isPopup){
+    const nextPopup = pages.find(candidate => candidate.isPopup
+      && candidate.parentUpsellUrl === source.parentUpsellUrl
+      && candidate.popupIndex === source.popupIndex + 1);
+    if(nextPopup) return nextPopup;
+    const parent = pages.find(candidate => candidate.type === 'upsell' && candidate.url === source.parentUpsellUrl);
+    return parent ? findNextFunnelPage(pages, parent, branch) : findNextFunnelPage(pages, source, branch);
+  }
+  return findNextFunnelPage(pages, source, branch);
 }
 
 function escapeHtml(value){
@@ -904,6 +1328,7 @@ function reorderPages(fromId, toId){
   renderFlow(lastModel, lastSettings.splitFunnel);
   renderTable(lastModel);
   renderOutput(lastSettings.accountId, lastSettings.token, lastSettings.lang, lastModel);
+  markDocumentDirty();
 }
 
 function toggleProductSplit(sourceId){
@@ -927,6 +1352,7 @@ function toggleProductSplit(sourceId){
   renderFlow(lastModel, lastSettings.splitFunnel);
   renderTable(lastModel);
   renderOutput(lastSettings.accountId, lastSettings.token, lastSettings.lang, lastModel);
+  markDocumentDirty();
 }
 
 function syncSplitPageLabels(){
@@ -957,25 +1383,52 @@ function refreshBranchBuyTargets(){
   if(!lastModel) return;
   const thankYou = lastModel.thankYouUrl || '—';
   lastModel.pages.filter(p => p.type === 'upsell' || p.type === 'downsell').forEach(p => {
-    if(p.splitByProduct && p.options.length >= 2){
-      p.buyTargets = p.options.map((_,i) => {
-        const selected = p.buyTargetIds?.[i] && lastModel.pages.find(q => q.id === p.buyTargetIds[i]);
-        if(selected) return selected.url;
-        const target = findNextFunnelPage(lastModel.pages, p, String.fromCharCode(97+i));
-        return target ? target.url : thankYou;
-      });
-      p.buyTarget = p.buyTargets[0] || thankYou;
-      return;
-    }
     const parent = p.type === 'downsell'
       ? lastModel.pages.find(u => u.type === 'upsell' && u.url === p.parentUpsellUrl)
       : null;
     const branch = stepVariantFor(p) || (parent && stepVariantFor(parent)) || null;
-    const target = findNextFunnelPage(lastModel.pages, p, branch);
-    p.buyTarget = target ? target.url : thankYou;
+    const nextPage = findNextFunnelPage(lastModel.pages, p, branch);
+    const nextDeclinePage = findNextNoThanksPage(lastModel.pages, p, branch);
+    const nextUpsell = p.type === 'upsell'
+      ? findNextUpsellPage(lastModel.pages, p, branch)
+      : null;
+
+    if(p.splitByProduct && p.options.length >= 2){
+      p.buyTargets = p.options.map((_,i) => {
+        const selected = p.buyTargetIds?.[i] && lastModel.pages.find(q => q.id === p.buyTargetIds[i]);
+        if(selected) return selected.url;
+        const optionBranch = String.fromCharCode(97+i);
+        const target = p.type === 'upsell'
+          ? findNextUpsellPage(lastModel.pages, p, optionBranch)
+          : findNextFunnelPage(lastModel.pages, p, optionBranch);
+        return target ? target.url : thankYou;
+      });
+      p.buyTarget = p.buyTargets[0] || thankYou;
+    } else if(p.type === 'upsell'){
+      // Buying an upsell skips downsell pages; only a later upsell is a valid target.
+      p.buyTarget = nextUpsell ? nextUpsell.url : thankYou;
+    } else {
+      // A downsell continues to the next page in the resolved funnel order.
+      p.buyTarget = nextPage ? nextPage.url : thankYou;
+    }
+
+    // Every standalone No/Decline advances to the next page in funnel order.
+    p.declineTarget = nextDeclinePage ? nextDeclinePage.url : thankYou;
+    p.declineTargetRef = null;
   });
   lastModel.pages.filter(p => p.isPopup).forEach(p => {
-    p.declineTarget = p.declineTargetRef ? p.declineTargetRef.url : p.buyTarget;
+    const parent = lastModel.pages.find(u => u.type === 'upsell' && u.url === p.parentUpsellUrl);
+    const branch = parent ? stepVariantFor(parent) : stepVariantFor(p);
+    const nextUpsell = findNextUpsellPage(lastModel.pages, p, branch);
+    const nextPopup = lastModel.pages.find(q => q.isPopup && q.parentUpsellUrl === p.parentUpsellUrl && q.popupIndex === p.popupIndex + 1);
+    const nextPage = findNextNoThanksPage(lastModel.pages, p, branch);
+    p.buyTarget = nextUpsell ? nextUpsell.url : thankYou;
+    p.declineTargetRef = nextPopup || null;
+    p.declineTarget = nextPopup ? nextPopup.url : (nextPage ? nextPage.url : thankYou);
+  });
+  lastModel.pages.filter(p => p.type === 'upsell').forEach(p => {
+    const popup = lastModel.pages.find(q => q.isPopup && q.parentUpsellUrl === p.url);
+    if(popup){ p.declineTargetRef = popup; p.declineTarget = null; }
   });
 }
 
@@ -1010,6 +1463,7 @@ function setProductSplitDestination(sourceId, optionIndex, targetId){
   renderFlow(lastModel, lastSettings.splitFunnel);
   renderTable(lastModel);
   renderOutput(lastSettings.accountId, lastSettings.token, lastSettings.lang, lastModel);
+  markDocumentDirty();
 }
 
 function handleCodenameDoubleClick(e){
@@ -1028,6 +1482,7 @@ function handleCodenameDoubleClick(e){
   renderFlow(lastModel, lastSettings.splitFunnel);
   renderTable(lastModel);
   renderOutput(lastSettings.accountId, lastSettings.token, lastSettings.lang, lastModel);
+  markDocumentDirty();
 }
 
 function renderTable(model){
@@ -1035,9 +1490,8 @@ function renderTable(model){
   let html = `<tr><th>Page</th><th>Product</th><th>URL</th><th>Codenames</th><th>Buy → redirects to</th><th>Decline → goes to</th></tr>`;
   model.pages.forEach(p => {
     const editableCodename = (index, value) => `<span class="codename-editable" data-page-id="${p.id}" data-codename-index="${index}" title="${escapeHtml(codenameExplanation(p,index))} Double-click to edit">${escapeHtml(value)}</span>`;
-    const codesHtml = p.hasPacks
-      ? p.codenames.map((c,i)=>editableCodename(i, c)).join('')
-      : `<span style="color:var(--red)">⚠ ${editableCodename(0, p.codenames[0])} — no pack info detected, edit manually</span>`;
+    p.skus = p.skus || p.codenames.map(() => '');
+    const codesHtml = p.codenames.map((code, i) => `<div>${!p.hasPacks && i === 0 ? '<span style="color:var(--red)">⚠ No pack info detected — </span>' : ''}${editableCodename(i, code)}<input class="sku-input" type="text" data-page-id="${p.id}" data-sku-index="${i}" value="${escapeHtml(p.skus[i] || '')}" placeholder="SKU (optional)" aria-label="SKU for ${escapeHtml(code)}"></div>`).join('');
     const buyDisplay = p.buyTargets
       ? p.buyTargets.map((t,i)=>`<div style="margin-bottom:2px"><small style="color:var(--amber)">[opt ${i+1}]</small> ${t||'—'}</div>`).join('')
       : (p.buyTarget || '<span style="color:var(--red)">not set</span>');
@@ -1058,6 +1512,18 @@ function renderTable(model){
   if(!table.dataset.codenameEditBound){
     table.dataset.codenameEditBound = 'true';
     table.addEventListener('dblclick', handleCodenameDoubleClick);
+    table.addEventListener('input', event => {
+      const input = event.target.closest('.sku-input');
+      if(!input || !lastModel) return;
+      const page = lastModel.pages.find(p => p.id === input.dataset.pageId);
+      const index = Number(input.dataset.skuIndex);
+      if(page && Number.isInteger(index)){
+        page.skus = page.skus || [];
+        page.skus[index] = input.value.trim();
+        renderOutput(lastSettings.accountId, lastSettings.token, lastSettings.lang, lastModel);
+        markDocumentDirty();
+      }
+    });
   }
   const flowBox = document.getElementById('flowBox');
   if(!flowBox.dataset.codenameEditBound){
@@ -1085,6 +1551,8 @@ function renderOutput(accountId, token, lang, model){
       if(p.hasPacks){
         p.options.forEach((count, i) => {
           out += `${count} ${count === 1 ? 'Bottle' : 'Bottles'}\n\n`;
+          const sku = String(p.skus?.[i] || '').replace(/[\r\n]+/g, ' ').trim();
+          if(sku) out += `SKU: ${sku}\n\n`;
           const redirect = (p.buyTargets && p.buyTargets[i] !== undefined) ? p.buyTargets[i] : p.buyTarget;
           out += buildLink(accountId, p.codenames[i], redirect, p.type, lang) + '\n\n';
         });
@@ -1104,6 +1572,8 @@ function renderOutput(accountId, token, lang, model){
     if(p.hasPacks){
       p.options.forEach((count, i) => {
         out += `${count} ${count === 1 ? 'Bottle' : 'Bottles'}\n\n`;
+        const sku = String(p.skus?.[i] || '').replace(/[\r\n]+/g, ' ').trim();
+        if(sku) out += `SKU: ${sku}\n\n`;
         const redirect = (p.buyTargets && p.buyTargets[i] !== undefined)
           ? p.buyTargets[i]
           : p.buyTarget;
@@ -1138,6 +1608,22 @@ function copyOutput(){
   });
 }
 
+function previewOutput(){
+  const outEl = document.getElementById('output');
+  const text = (outEl.innerText || outEl.textContent || '').trim();
+  if(!text) return;
+  const preview = window.open('', '_blank');
+  if(!preview){
+    setDocumentStatus('Allow pop-ups for this tool to open the document preview.', true);
+    return;
+  }
+  preview.opener = null;
+  const title = document.getElementById('productName').value.trim() || 'Generated integration document';
+  preview.document.open();
+  preview.document.write(`<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'unsafe-inline'"><title>${escapeHtml(title)} preview</title><style>body{margin:0;padding:32px;background:#f4f5f7;color:#202631;font:14px/1.55 Arial,sans-serif}main{max-width:960px;margin:0 auto;padding:28px;background:white;border:1px solid #dfe3e8;border-radius:10px}h1{margin:0 0 22px;font-size:21px}pre{margin:0;white-space:pre-wrap;overflow-wrap:anywhere;font:13px/1.55 Consolas,monospace}@media print{body{padding:0;background:white}main{border:0;max-width:none;padding:0}}</style></head><body><main><h1>${escapeHtml(title)}</h1><pre>${escapeHtml(text)}</pre></main></body></html>`);
+  preview.document.close();
+}
+
 function downloadOutput(){
   const outEl = document.getElementById('output');
   const text = (outEl.innerText || outEl.textContent || '').trim();
@@ -1146,7 +1632,9 @@ function downloadOutput(){
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
   a.href = url;
-  a.download = 'integration-doc.txt';
+  const date = new Intl.DateTimeFormat('en-GB', {timeZone:'Europe/Bucharest',day:'2-digit',month:'2-digit',year:'numeric'}).format(new Date()).replace(/\//g, '-');
+  const safe = value => String(value || '').trim().normalize('NFKD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-zA-Z0-9]+/g, '-').replace(/^-+|-+$/g, '') || 'document';
+  a.download = `${safe(document.getElementById('productName').value)}-${safe(document.getElementById('accountId').value)}-${date}.txt`;
   a.click();
   URL.revokeObjectURL(url);
 }
@@ -1164,12 +1652,23 @@ function downloadOutput(){
     const src = icon.dataset.img || '';
     popup.querySelector('img').src = src;
     popup.style.display = 'block';
+    positionPopup(e.clientX, e.clientY);
   });
+  let pointer = {x:0,y:0};
+  function positionPopup(x, y){
+    pointer = {x,y};
+    const rect = popup.getBoundingClientRect();
+    const margin = 8, gap = 16;
+    let left = x + gap, top = y + gap;
+    if(left + rect.width > window.innerWidth - margin) left = x - rect.width - gap;
+    if(top + rect.height > window.innerHeight - margin) top = y - rect.height - gap;
+    popup.style.left = Math.max(margin, Math.min(left, window.innerWidth - rect.width - margin)) + 'px';
+    popup.style.top = Math.max(margin, Math.min(top, window.innerHeight - rect.height - margin)) + 'px';
+  }
+  popup.querySelector('img').addEventListener('load', function(){ positionPopup(pointer.x, pointer.y); });
   document.addEventListener('mousemove', function(e){
     if(popup.style.display==='none') return;
-    const x = e.clientX + 16, y = e.clientY + 16;
-    popup.style.left = Math.min(x, window.innerWidth  - 290) + 'px';
-    popup.style.top  = Math.min(y, window.innerHeight - 210) + 'px';
+    positionPopup(e.clientX, e.clientY);
   });
   document.addEventListener('mouseout', function(e){
     const to = e.relatedTarget;
@@ -1177,5 +1676,6 @@ function downloadOutput(){
   });
 })();
 </script>
+<script src="/affiliate-manager.js"></script>
 </body>
 </html>
