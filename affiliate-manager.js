@@ -63,7 +63,7 @@
       window.clearTimeout(localStartTimeout);
       localStartTimeout = null;
       if (message.status === 'permission-required') {
-        localStatus.textContent = `${message.message || `Click the BuyGoods Verifier extension icon to allow access to ${message.host || 'this site'}.`} The tool tab stays active.`;
+        localStatus.textContent = message.message || 'The extension does not have permission to inspect this site. Reload the extension and approve its requested site access.';
       } else if (message.status === 'checking') {
         localStatus.textContent = 'Checking in a background tab. This page stays active…';
       } else if (message.status === 'error') {
@@ -167,4 +167,96 @@
       button.textContent = 'Verify Tracking';
     }
   });
+
+  const cleanLinksButton = document.getElementById('cleanBuyLinksButton');
+  const cleanLinksInput = document.getElementById('buyLinksInput');
+  const cleanLinksOutput = document.getElementById('buyLinksOutput');
+  const cleanLinksWrap = document.getElementById('cleanBuyLinksOutputWrap');
+  const cleanLinksStatus = document.getElementById('cleanBuyLinksStatus');
+  cleanLinksButton.addEventListener('click', () => {
+    const raw = cleanLinksInput.value.trim();
+    cleanLinksWrap.hidden = true;
+    if (!raw) {
+      cleanLinksStatus.textContent = 'Paste at least one BuyGoods link.';
+      return;
+    }
+
+    const candidates = raw.match(/https?:\/\/[^\s<>"']+/gi) || raw.split(/[\r\n]+/).map(line => line.trim()).filter(Boolean);
+    const cleaned = [];
+    const errors = [];
+    candidates.forEach((candidate, index) => {
+      const value = candidate.replace(/[),.;\]]+$/g, '');
+      try {
+        const url = new URL(value);
+        const host = url.hostname.toLowerCase();
+        if (!['buygoods.com', 'www.buygoods.com'].includes(host) || !/^\/secure\/(checkout\.html|upsell\/?)/i.test(url.pathname)) {
+          throw new Error('not a BuyGoods checkout URL');
+        }
+        const source = url.searchParams;
+        const accountId = source.get('account_id');
+        const codename = source.get('product_codename');
+        if (!accountId || !codename) throw new Error('account_id or product_codename is missing');
+        const params = new URLSearchParams();
+        params.set('account_id', accountId);
+        params.set('product_codename', codename);
+        if (source.get('lang')) params.set('lang', source.get('lang'));
+        if (source.get('redirect')) params.set('redirect', source.get('redirect'));
+        url.search = params.toString();
+        url.hash = '';
+        cleaned.push(url.toString());
+      } catch (error) {
+        errors.push(`Link ${index + 1}: ${error.message}`);
+      }
+    });
+
+    if (!cleaned.length) {
+      cleanLinksStatus.textContent = errors[0] || 'No valid BuyGoods checkout links found.';
+      return;
+    }
+    cleanLinksOutput.value = cleaned.join('\n');
+    cleanLinksWrap.hidden = false;
+    cleanLinksStatus.textContent = errors.length
+      ? `Cleaned ${cleaned.length} link(s); skipped ${errors.length} invalid link(s). ${errors[0]}`
+      : `Cleaned ${cleaned.length} link(s).`;
+  });
+
+  document.getElementById('copyBuyLinksButton').addEventListener('click', async () => {
+    await copyText(cleanLinksOutput.value, cleanLinksStatus, 'Buy links copied.');
+  });
+
+  const addAffIdButton = document.getElementById('addAffIdButton');
+  const affIdOutput = document.getElementById('affIdOutput');
+  const affIdOutputWrap = document.getElementById('affIdOutputWrap');
+  const affIdStatus = document.getElementById('affIdStatus');
+  addAffIdButton.addEventListener('click', () => {
+    const rawUrl = document.getElementById('affIdUrl').value.trim();
+    const value = document.getElementById('affIdValue').value.trim();
+    affIdOutputWrap.hidden = true;
+    if (!rawUrl || !value) {
+      affIdStatus.textContent = 'Enter both a URL and an aff_id value.';
+      return;
+    }
+    try {
+      const url = new URL(rawUrl);
+      if (!['http:', 'https:'].includes(url.protocol)) throw new Error('Use an HTTP or HTTPS URL.');
+      url.searchParams.set('aff_id', value);
+      affIdOutput.value = url.toString();
+      affIdOutputWrap.hidden = false;
+      affIdStatus.textContent = 'Affiliate ID added.';
+    } catch (error) {
+      affIdStatus.textContent = error.message || 'Enter a valid URL.';
+    }
+  });
+  document.getElementById('copyAffIdButton').addEventListener('click', async () => {
+    await copyText(affIdOutput.value, affIdStatus, 'URL copied.');
+  });
+
+  async function copyText(value, statusElement, successMessage) {
+    try {
+      await navigator.clipboard.writeText(value);
+      statusElement.textContent = successMessage;
+    } catch (_) {
+      statusElement.textContent = 'Copy was blocked by the browser. Select the output and copy it manually.';
+    }
+  }
 })();

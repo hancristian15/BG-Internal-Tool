@@ -1,12 +1,11 @@
 {
   "manifest_version": 3,
   "name": "BuyGoods Tracking Verifier",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "Checks BuyGoods tracking on a page in a background tab without leaving the tool.",
   "minimum_chrome_version": "116",
-  "permissions": ["alarms", "scripting", "storage"],
-  "optional_permissions": ["webRequest"],
-  "optional_host_permissions": ["http://*/*", "https://*/*"],
+  "permissions": ["alarms", "scripting", "storage", "webRequest"],
+  "host_permissions": ["<all_urls>"],
   "background": { "service_worker": "background.js" },
   "action": {
     "default_title": "BuyGoods Tracking Verifier",

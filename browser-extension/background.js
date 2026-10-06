@@ -2,7 +2,6 @@ const APP_ORIGINS = new Set([
   'https://bgtool-git-dev-buy-goods-internal.vercel.app',
   'https://bgtool-rho.vercel.app',
 ]);
-const PENDING_KEY = 'pendingVerification';
 const JOB_PREFIX = 'trackingJob:';
 let webRequestListenersRegistered = false;
 
@@ -15,28 +14,6 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     return true;
   }
 
-  if (message?.type === 'permission-granted') {
-    startPendingVerification().then(sendResponse).catch(async error => {
-      const {[PENDING_KEY]: pending} = await chrome.storage.local.get(PENDING_KEY);
-      if (pending) await reportToTool(pending.appTabId, pending.requestId, 'error', error.message || 'The check could not start after permission was granted.');
-      sendResponse({status: 'error', message: error.message || 'The check could not start after permission was granted.'});
-    });
-    return true;
-  }
-
-  if (message?.type === 'permission-denied') {
-    reportToTool(message.appTabId, message.requestId, 'error', 'Permission was not granted for this site.');
-    sendResponse({status: 'denied'});
-    return false;
-  }
-
-  if (message?.type === 'cancel-pending') {
-    chrome.storage.local.remove(PENDING_KEY).then(async () => {
-      await reportToTool(message.appTabId, message.requestId, 'error', 'The background check was cancelled.');
-      sendResponse({status: 'cancelled'});
-    });
-    return true;
-  }
 });
 
 async function handleVerifyRequest(message, sender) {
@@ -51,36 +28,18 @@ async function handleVerifyRequest(message, sender) {
     return {status: 'error', message: 'The verification request ID is invalid.'};
   }
 
-  const pending = {
+  const job = {
     requestId: message.requestId,
     url: target.href,
-    permissionOrigin: target.origin,
     appTabId: sender.tab.id,
     createdAt: Date.now(),
   };
-  await chrome.storage.local.set({[PENDING_KEY]: pending});
-
-  const hasPermission = await chrome.permissions.contains({permissions: ['webRequest'], origins: [permissionPattern(target.origin)]});
-  if (!hasPermission) return {status: 'permission-required', host: target.host};
-
-  await startVerification(pending);
+  await startVerification(job);
   return {status: 'checking', host: target.host};
 }
 
-async function startPendingVerification() {
-  const {[PENDING_KEY]: pending} = await chrome.storage.local.get(PENDING_KEY);
-  if (!pending) return {status: 'error', message: 'There is no pending check. Start one from the Affiliate Manager.'};
-
-  const granted = await chrome.permissions.contains({permissions: ['webRequest'], origins: [permissionPattern(pending.permissionOrigin)]});
-  if (!granted) return {status: 'permission-required', host: new URL(pending.permissionOrigin).host};
-
-  await startVerification(pending);
-  await chrome.storage.local.remove(PENDING_KEY);
-  return {status: 'checking', host: new URL(pending.permissionOrigin).host};
-}
-
 async function startVerification(pending) {
-  if (!await ensureWebRequestListeners()) throw new Error('Allow the extension to monitor this site request, then retry.');
+  await ensureWebRequestListeners();
   const tab = await chrome.tabs.create({url: 'about:blank', active: false});
   const job = {
     ...pending,
@@ -98,8 +57,6 @@ async function startVerification(pending) {
 }
 
 async function ensureWebRequestListeners() {
-  const granted = await chrome.permissions.contains({permissions: ['webRequest']});
-  if (!granted) return false;
   if (webRequestListenersRegistered) return true;
   chrome.webRequest.onHeadersReceived.addListener(details => {
     if (details.type !== 'main_frame') return;
@@ -123,7 +80,6 @@ async function ensureWebRequestListeners() {
   return true;
 }
 
-chrome.permissions.onAdded.addListener(() => ensureWebRequestListeners().catch(() => {}));
 chrome.runtime.onStartup.addListener(() => ensureWebRequestListeners().catch(() => {}));
 ensureWebRequestListeners().catch(() => {});
 
@@ -156,14 +112,6 @@ async function finishPageLoad(tabId) {
   const finalUrl = tab?.url || currentJob.redirectUrl || currentJob.url;
   if (!isPublicTarget(finalUrl)) {
     return finishWithError(tabId, 'The page redirected to a browser-internal or private address.');
-  }
-
-  const finalOrigin = new URL(finalUrl).origin;
-  const hasFinalPermission = await chrome.permissions.contains({origins: [permissionPattern(finalOrigin)]});
-  if (!hasFinalPermission) {
-    await chrome.storage.local.set({[PENDING_KEY]: {...currentJob, permissionOrigin: finalOrigin}});
-    await reportToTool(currentJob.appTabId, currentJob.requestId, 'permission-required', `The page redirected to ${new URL(finalUrl).host}; click the extension icon to grant access for that host.`);
-    return removeJobTab(tabId);
   }
 
   if (currentJob.httpStatus >= 400) {
@@ -243,10 +191,6 @@ async function updateJob(tabId, updater) {
   const key = `${JOB_PREFIX}${tabId}`;
   const {[key]: job} = await chrome.storage.session.get(key);
   if (job) await chrome.storage.session.set({[key]: updater(job)});
-}
-
-function permissionPattern(origin) {
-  return `${origin}/*`;
 }
 
 function parsePublicTarget(value) {
