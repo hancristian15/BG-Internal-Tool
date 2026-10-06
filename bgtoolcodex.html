@@ -29,6 +29,41 @@
   @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap');
 
   .wrap{max-width:1040px;margin:0 auto;padding:40px 24px 80px;}
+  .tool-navbar{display:flex;justify-content:space-between;align-items:center;gap:16px;margin-bottom:28px;padding:8px;border:1px solid var(--line);border-radius:12px;background:var(--panel);box-shadow:0 8px 28px rgba(0,0,0,.16);}
+  .tool-nav-btn{display:flex;align-items:center;gap:11px;min-height:48px;padding:8px 15px;border:1px solid transparent;border-radius:8px;background:transparent;color:var(--muted);font:600 13px var(--sans);cursor:pointer;transition:all .18s ease;}
+  .tool-nav-btn:hover{color:var(--text);background:var(--panel-2);}
+  .tool-nav-btn[aria-pressed="true"]{border-color:var(--line);background:var(--panel-2);color:var(--text);box-shadow:0 2px 8px rgba(0,0,0,.12);}
+  .tool-nav-mark{display:grid;place-items:center;width:29px;height:29px;border-radius:8px;background:var(--amber);color:#17140a;font:700 12px var(--mono);}
+  .tool-nav-subtitle{display:block;margin-top:2px;color:var(--muted);font-size:10px;font-weight:400;text-align:left;}
+  .tool-nav-right{display:flex;justify-content:flex-end;flex:1;}
+  body.affiliate-theme{--bg:#f1f4ff;--panel:#fff;--panel-2:#e9edff;--line:#d3daf2;--text:#19264b;--muted:#687596;--amber:#435ee8;--lime:#087c5e;--red:#c6374f;}
+  body.affiliate-theme .tool-navbar{box-shadow:0 10px 32px rgba(44,63,140,.10);}
+  body.affiliate-theme .tool-nav-mark{color:#fff;}
+  .app-view[hidden]{display:none!important;}
+  .affiliate-hero{display:flex;align-items:flex-start;gap:17px;margin:8px 0 26px;}
+  .affiliate-hero-mark{display:grid;place-items:center;width:48px;height:48px;flex:0 0 48px;border-radius:14px;background:linear-gradient(145deg,#667cf5,#334cd1);color:white;font:700 18px var(--mono);box-shadow:0 9px 22px rgba(65,89,220,.25);}
+  .affiliate-hero h1{margin:0 0 5px;font-size:26px;letter-spacing:-.03em;color:var(--text);}
+  .affiliate-hero p{margin:0;color:var(--muted);font-size:13px;max-width:650px;}
+  .affiliate-checker{max-width:760px;margin:0 auto;padding:26px;background:var(--panel);border:1px solid var(--line);border-radius:15px;box-shadow:0 18px 50px rgba(44,63,140,.10);}
+  .affiliate-checker h2{margin:0 0 7px;color:var(--text);font-size:16px;}
+  .affiliate-checker .hint{margin-bottom:18px;}
+  .affiliate-form{display:flex;gap:10px;align-items:stretch;}
+  .affiliate-form input{flex:1;min-width:0;}
+  .affiliate-form .btn-primary{white-space:nowrap;background:#435ee8;border-color:#435ee8;color:white;}
+  .affiliate-form .btn-primary:hover{background:#344cc9;border-color:#344cc9;}
+  .affiliate-result{margin-top:18px;padding:17px;border:1px solid var(--line);border-radius:11px;background:var(--panel-2);}
+  .affiliate-result[hidden]{display:none!important;}
+  .affiliate-result-title{margin-bottom:13px;font-size:15px;font-weight:700;}
+  .affiliate-result-title.good{color:var(--lime);}
+  .affiliate-result-title.bad{color:var(--red);}
+  .affiliate-check-list{display:grid;gap:8px;}
+  .affiliate-check-row{display:flex;align-items:center;gap:10px;font-size:13px;color:var(--text);}
+  .affiliate-check-icon{display:grid;place-items:center;width:21px;height:21px;flex:0 0 21px;border-radius:50%;font-size:12px;font-weight:800;}
+  .affiliate-check-row.good .affiliate-check-icon{background:rgba(8,124,94,.13);color:var(--lime);}
+  .affiliate-check-row.bad .affiliate-check-icon{background:rgba(198,55,79,.12);color:var(--red);}
+  .affiliate-checked-url{margin-top:12px;color:var(--muted);font:11px var(--mono);overflow-wrap:anywhere;}
+  body.affiliate-theme .err{background:#fff0f2;color:#92263a;border-color:#e5a1ac;}
+  @media(max-width:600px){.tool-navbar{gap:5px;padding:5px}.tool-nav-btn{gap:7px;padding:7px;font-size:11px}.tool-nav-mark{width:25px;height:25px}.affiliate-form{flex-direction:column}.affiliate-checker{padding:18px}.affiliate-hero h1{font-size:21px}}
   header{margin-bottom:32px;border-bottom:1px solid var(--line);padding-bottom:24px;}
   header .tag{font-family:var(--mono);font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:var(--amber);}
   header h1{font-size:28px;margin:8px 0 6px;font-weight:700;}
@@ -116,7 +151,7 @@
   .tip-icon{display:inline-flex;align-items:center;justify-content:center;width:14px;height:14px;border-radius:50%;background:rgba(139,144,160,.35);color:var(--text);font-size:9px;font-weight:700;cursor:help;vertical-align:middle;margin-left:5px;flex-shrink:0;font-family:var(--sans);line-height:1;border:1px solid rgba(139,144,160,.3);transition:background .15s;}
   .tip-icon:hover{background:var(--amber);color:#1a1407;border-color:var(--amber);}
   #tip-popup{position:fixed;z-index:9999;border:1px solid var(--line);border-radius:8px;background:var(--panel);padding:6px;display:none;pointer-events:none;box-shadow:0 8px 24px rgba(0,0,0,.55);}
-  #tip-popup img{display:block;max-width:260px;max-height:180px;border-radius:4px;}
+  #tip-popup img{display:block;width:auto;height:auto;max-width:none;max-height:none;border-radius:4px;}
   .empty{color:var(--muted);font-size:13px;padding:30px 0;text-align:center;}
   .copied{color:var(--lime);font-size:12px;margin-left:10px;font-family:var(--mono);}
   .err{background:#2a1a1c;border:1px solid var(--red);color:#ffb3b8;border-radius:6px;padding:12px 14px;font-size:13px;margin-bottom:16px;}
@@ -152,6 +187,17 @@
 </head>
 <body>
 <div class="wrap">
+  <nav class="tool-navbar" aria-label="BuyGoods tools">
+    <button class="tool-nav-btn" id="builderNav" type="button" aria-pressed="true">
+      <span class="tool-nav-mark">FB</span><span>BuyGoods Funnel Builder<span class="tool-nav-subtitle">Offer flows &amp; documents</span></span>
+    </button>
+    <div class="tool-nav-right">
+      <button class="tool-nav-btn" id="affiliateManagerNav" type="button" aria-pressed="false">
+        <span>BuyGoods Affiliate Manager Tool<span class="tool-nav-subtitle">Tracking verification</span></span><span class="tool-nav-mark">AM</span>
+      </button>
+    </div>
+  </nav>
+  <main class="app-view" id="builderView">
 
   <header>
     <div class="tag">// internal tool</div>
@@ -280,6 +326,28 @@ Downsell 1: https://retraslim.app/orderdw1-v1?f=89s6iw&fnid=19&pfnid=17
   <div class="panel" id="emptyPanel">
     <div class="empty">Nothing generated yet. Fill in the setup fields, paste your offer flow, and click "Generate funnel".</div>
   </div>
+  </main>
+
+  <main class="app-view" id="affiliateManagerView" hidden>
+    <header class="affiliate-hero">
+      <div class="affiliate-hero-mark">AM</div>
+      <div><div class="tag">// affiliate operations</div><h1>BuyGoods Affiliate Manager Tool</h1><p>Check a live offer page for the BuyGoods tracking snippet and the parameters added to its checkout links.</p></div>
+    </header>
+    <section class="affiliate-checker" aria-labelledby="trackingCheckerTitle">
+      <h2 id="trackingCheckerTitle">Verify tracking</h2>
+      <div class="hint">Enter the public landing page URL. The page will be opened in a clean browser so its scripts can run before the links are checked.</div>
+      <form class="affiliate-form" id="trackingVerifyForm">
+        <input type="url" id="trackingPageUrl" placeholder="https://yourdomain.com/offer" autocomplete="url" required>
+        <button class="btn-primary" id="verifyTrackingButton" type="submit">Verify Tracking</button>
+      </form>
+      <div class="doc-status" id="trackingVerifyStatus" role="status" aria-live="polite"></div>
+      <div class="affiliate-result" id="trackingVerifyResult" aria-live="polite" hidden>
+        <div class="affiliate-result-title" id="trackingVerifyHeadline"></div>
+        <div class="affiliate-check-list" id="trackingVerifyChecks"></div>
+        <div class="affiliate-checked-url" id="trackingCheckedUrl"></div>
+      </div>
+    </section>
+  </main>
 
 </div>
 
@@ -1551,12 +1619,23 @@ function downloadOutput(){
     const src = icon.dataset.img || '';
     popup.querySelector('img').src = src;
     popup.style.display = 'block';
+    positionPopup(e.clientX, e.clientY);
   });
+  let pointer = {x:0,y:0};
+  function positionPopup(x, y){
+    pointer = {x,y};
+    const rect = popup.getBoundingClientRect();
+    const margin = 8, gap = 16;
+    let left = x + gap, top = y + gap;
+    if(left + rect.width > window.innerWidth - margin) left = x - rect.width - gap;
+    if(top + rect.height > window.innerHeight - margin) top = y - rect.height - gap;
+    popup.style.left = Math.max(margin, Math.min(left, window.innerWidth - rect.width - margin)) + 'px';
+    popup.style.top = Math.max(margin, Math.min(top, window.innerHeight - rect.height - margin)) + 'px';
+  }
+  popup.querySelector('img').addEventListener('load', function(){ positionPopup(pointer.x, pointer.y); });
   document.addEventListener('mousemove', function(e){
     if(popup.style.display==='none') return;
-    const x = e.clientX + 16, y = e.clientY + 16;
-    popup.style.left = Math.min(x, window.innerWidth  - 290) + 'px';
-    popup.style.top  = Math.min(y, window.innerHeight - 210) + 'px';
+    positionPopup(e.clientX, e.clientY);
   });
   document.addEventListener('mouseout', function(e){
     const to = e.relatedTarget;
@@ -1564,5 +1643,6 @@ function downloadOutput(){
   });
 })();
 </script>
+<script src="/affiliate-manager.js"></script>
 </body>
 </html>

@@ -34,3 +34,9 @@ After running the SQL and adding the variables in Vercel, redeploy the project. 
 - Search accepts an account ID or product name. Edit restores the stored builder settings and resolved flow.
 - The share URL opens a read-only preview and shows the original creation date. Anyone with the tool URL can search and edit; anyone with a share URL can view that document.
 - Display names use `Product - Account ID - DD/MM/YYYY`. Downloaded filenames use `DD-MM-YYYY` because slashes are path separators on common operating systems.
+
+## Affiliate Manager
+
+The Affiliate Manager view is available from the right side of the in-page tool navigation. It opens a public HTTP or HTTPS offer page in a clean headless Chromium session, waits for page scripts to run, then checks the rendered BuyGoods tracking code and checkout links for `sessid2` and `aff_id`. The browser verifier is implemented in `api/verify-tracking.js`; its front-end is in `affiliate-manager.js`.
+
+The verifier rejects non-public hosts, private or loopback IP addresses, and non-standard ports. It uses `@sparticuz/chromium` with `puppeteer-core`, so the Vercel project runs on Node.js 24.x.
