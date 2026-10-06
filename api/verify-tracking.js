@@ -105,9 +105,12 @@ module.exports = async function verifyTracking(req, res) {
 
     const response = await page.goto(target.href, {waitUntil:'domcontentloaded', timeout:22000});
     if (!response) return send(res, 502, {error:'The page did not return an HTTP response'});
+    if (response.status() === 403) {
+      return send(res, 502, {error:"The destination returned HTTP 403 to Vercel's verification browser. Its CDN or firewall is denying this request; the site administrator must allow the verifier, or the check must run from an authorized browser session."});
+    }
     if (response.status() >= 400) return send(res, 502, {error:`The page returned HTTP ${response.status()}`});
     await page.waitForNetworkIdle({idleTime:800, timeout:6000}).catch(() => {});
-    await page.waitForTimeout(1000);
+    await new Promise(resolve => setTimeout(resolve, 1000));
 
     const result = await page.evaluate(() => {
       const scriptText = Array.from(document.scripts).map(script => `${script.src}\n${script.textContent || ''}`).join('\n');

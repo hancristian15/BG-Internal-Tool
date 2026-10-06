@@ -217,7 +217,10 @@
   <div class="panel" id="sharedPreviewPanel" style="display:none;">
     <h2>Shared document preview</h2>
     <div id="sharedDocumentMeta" class="doc-status"></div>
-    <div class="actions"><button class="btn-ghost" onclick="copyShareLink()">Copy share URL</button></div>
+    <div class="actions">
+      <button class="btn-ghost" onclick="returnFromSharedPreview()">Back to builder</button>
+      <button class="btn-ghost" onclick="copyShareLink()">Copy share URL</button>
+    </div>
     <pre id="sharedDocumentOutput" class="shared-output"></pre>
   </div>
 
@@ -314,6 +317,7 @@ Downsell 1: https://retraslim.app/orderdw1-v1?f=89s6iw&fnid=19&pfnid=17
   <div class="panel" id="outputPanel" style="display:none;">
     <h2>Generated output</h2>
     <div class="actions" style="margin-top:0;margin-bottom:14px;">
+      <button class="btn-ghost" onclick="previewOutput()">Preview</button>
       <button class="btn-ghost" onclick="copyOutput()">Copy to clipboard</button>
       <button class="btn-ghost" onclick="downloadOutput()">Download .txt</button>
       <button class="btn-ghost" id="saveDocumentButton" onclick="saveDocumentChanges()" style="display:none;">Save changes</button>
@@ -936,11 +940,24 @@ async function copyShareLink(){
   catch(error) { window.prompt('Copy this share URL:', window.location.href); }
 }
 
+function returnFromSharedPreview(){
+  const url = new URL(window.location.href);
+  url.searchParams.delete('share');
+  window.location.assign(url.toString());
+}
+
 async function loadSharedPreview(token){
-  document.querySelectorAll('.wrap > .panel').forEach(panel => { panel.style.display = panel.id === 'sharedPreviewPanel' ? 'block' : 'none'; });
-  document.querySelector('.wrap > header h1').textContent = 'Shared integration document';
-  document.querySelector('.wrap > header p').textContent = 'Read-only preview.';
-  document.getElementById('sharedPreviewPanel').style.display = 'block';
+  const previewPanel = document.getElementById('sharedPreviewPanel');
+  const builderView = document.getElementById('builderView');
+  const affiliateView = document.getElementById('affiliateManagerView');
+  const toolNav = document.querySelector('.tool-navbar');
+  if(toolNav) toolNav.style.display = 'none';
+  builderView.hidden = false;
+  affiliateView.hidden = true;
+  Array.from(builderView.children).forEach(child => {
+    child.style.display = child === previewPanel ? 'block' : 'none';
+  });
+  previewPanel.style.display = 'block';
   const meta = document.getElementById('sharedDocumentMeta');
   const output = document.getElementById('sharedDocumentOutput');
   meta.textContent = 'Loading document…';
@@ -1589,6 +1606,22 @@ function copyOutput(){
     msg.style.display = 'inline';
     setTimeout(()=>{ msg.style.display = 'none'; }, 1800);
   });
+}
+
+function previewOutput(){
+  const outEl = document.getElementById('output');
+  const text = (outEl.innerText || outEl.textContent || '').trim();
+  if(!text) return;
+  const preview = window.open('', '_blank');
+  if(!preview){
+    setDocumentStatus('Allow pop-ups for this tool to open the document preview.', true);
+    return;
+  }
+  preview.opener = null;
+  const title = document.getElementById('productName').value.trim() || 'Generated integration document';
+  preview.document.open();
+  preview.document.write(`<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'unsafe-inline'"><title>${escapeHtml(title)} preview</title><style>body{margin:0;padding:32px;background:#f4f5f7;color:#202631;font:14px/1.55 Arial,sans-serif}main{max-width:960px;margin:0 auto;padding:28px;background:white;border:1px solid #dfe3e8;border-radius:10px}h1{margin:0 0 22px;font-size:21px}pre{margin:0;white-space:pre-wrap;overflow-wrap:anywhere;font:13px/1.55 Consolas,monospace}@media print{body{padding:0;background:white}main{border:0;max-width:none;padding:0}}</style></head><body><main><h1>${escapeHtml(title)}</h1><pre>${escapeHtml(text)}</pre></main></body></html>`);
+  preview.document.close();
 }
 
 function downloadOutput(){

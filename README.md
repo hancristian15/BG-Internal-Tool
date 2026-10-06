@@ -40,3 +40,5 @@ After running the SQL and adding the variables in Vercel, redeploy the project. 
 The Affiliate Manager view is available from the right side of the in-page tool navigation. It opens a public HTTP or HTTPS offer page in a clean headless Chromium session, waits for page scripts to run, then checks the rendered BuyGoods tracking code and checkout links for `sessid2` and `aff_id`. The browser verifier is implemented in `api/verify-tracking.js`; its front-end is in `affiliate-manager.js`.
 
 The verifier rejects non-public hosts, private or loopback IP addresses, and non-standard ports. It uses `@sparticuz/chromium` with `puppeteer-core`, so the Vercel project runs on Node.js 24.x.
+
+If the destination returns HTTP 403, its CDN or firewall is denying the Vercel browser request. The site administrator must allow the verifier, or the check must run from a browser session authorized by that site. The tool does not override a destination site's access rules.
