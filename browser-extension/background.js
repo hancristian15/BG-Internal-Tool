@@ -27,6 +27,10 @@ async function handleVerifyRequest(message, sender) {
   if (!/^[a-zA-Z0-9-]{8,80}$/.test(message.requestId || '')) {
     return {status: 'error', message: 'The verification request ID is invalid.'};
   }
+  const hasHostAccess = await chrome.permissions.contains({origins: [`${target.origin}/*`]});
+  if (!hasHostAccess) {
+    return {status: 'error', message: `The extension does not have access to ${target.host}. Open its Details in the extensions page, set Site access to On all sites, then reload the extension.`};
+  }
 
   const job = {
     requestId: message.requestId,
@@ -123,11 +127,23 @@ async function finishPageLoad(tabId) {
     });
   }
 
+  if (currentJob.networkError) {
+    return finishWithError(tabId, `The browser blocked navigation to ${new URL(finalUrl).host} before the page loaded (${currentJob.networkError}). Check browser privacy/ad-blocking extensions or local network filtering for this site.`);
+  }
+
   try {
     const [{result}] = await chrome.scripting.executeScript({target: {tabId}, func: collectPageData});
     await finishWithResult(tabId, currentJob, {...result, finalUrl});
   } catch (error) {
-    await finishWithError(tabId, `The browser could not inspect this page: ${error.message || 'permission or browser restriction'}`);
+    const host = new URL(finalUrl).host;
+    const hasHostAccess = await chrome.permissions.contains({origins: [`${new URL(finalUrl).origin}/*`]}).catch(() => false);
+    if (!hasHostAccess) {
+      await finishWithError(tabId, `The extension cannot inspect ${host} because its site access is off. In the extensions page, open BuyGoods Tracking Verifier → Details → Site access → On all sites, then reload it.`);
+    } else if (/blocked/i.test(error.message || '')) {
+      await finishWithError(tabId, `Chrome blocked script inspection on ${host} (${error.message}). Check that the extension has Site access set to On all sites and that no ad-blocker or privacy extension is blocking this page.`);
+    } else {
+      await finishWithError(tabId, `The browser could not inspect ${host}: ${error.message || 'unknown browser restriction'}`);
+    }
   }
 }
 

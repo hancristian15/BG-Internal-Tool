@@ -10,3 +10,5 @@ Use this Chrome/Edge extension when the hosted verifier receives HTTP 403. It op
 4. Accept the browser's initial request for access to all sites.
 
 The extension will not request permission separately for each site. Chrome/Edge still require you to approve the initial extension installation and its requested access. The verifier does not read cookie values or send page HTML to the tool server; it passes the tracking checks, status code, and Cloudflare Ray ID when available.
+
+If the verifier says the browser blocked script inspection, open the extension's **Details → Site access** and choose **On all sites**, then reload the extension. If access is already enabled, another browser privacy/ad-blocking extension or local network filter may be blocking the target page.
