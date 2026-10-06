@@ -8,24 +8,28 @@
   window.addEventListener('message', event => {
     if (event.source !== window || event.origin !== location.origin) return;
     const message = event.data;
-    if (!message || message.channel !== channel || message.type !== 'verify-request') return;
+    if (!message || message.channel !== channel || !['verify-request', 'test-postback'].includes(message.type)) return;
     if (typeof message.requestId !== 'string' || typeof message.url !== 'string') return;
 
     chrome.runtime.sendMessage({
-      type: 'verify-request',
+      type: message.type,
       requestId: message.requestId,
       url: message.url,
     }).then(reply => {
-      postToTool({
-        type: 'status',
-        requestId: message.requestId,
-        status: reply?.status || 'error',
-        host: reply?.host || '',
-        message: reply?.message || '',
-      });
+      if (message.type === 'test-postback') {
+        postToTool({
+          type: 'postback-result',
+          requestId: message.requestId,
+          status: reply?.status || 'error',
+          result: reply?.result || null,
+          message: reply?.message || '',
+        });
+        return;
+      }
+      postToTool({type:'status', requestId:message.requestId, status:reply?.status || 'error', host:reply?.host || '', message:reply?.message || ''});
     }).catch(() => {
       postToTool({
-        type: 'status',
+        type: message.type === 'test-postback' ? 'postback-result' : 'status',
         requestId: message.requestId,
         status: 'error',
         message: 'The extension could not start the background check.',

@@ -47,4 +47,6 @@ To install it, open `chrome://extensions` (Chrome) or `edge://extensions` (Edge)
 
 The Affiliate Manager also includes utilities to clean BuyGoods checkout links down to the integration fields (`account_id`, `product_codename`, `lang`, and `redirect`) and to add or replace an `aff_id` query parameter on a URL.
 
+The postback checker requires an exact BuyGoods `{SUBID}` or `{SUBID2}`–`{SUBID5}` macro, replaces it with a unique test click ID, and sends a local browser request with `amount=0`. It displays the HTTP status and response text; a successful HTTP response confirms the endpoint answered, not that a synthetic click was attributed. The InitiateCheckout pixel generator creates a hidden 1×1 `<img>` tag and can add `type=InitiateCheckout` for RedTrack URLs.
+
 If the local browser also receives HTTP 403, the result includes a Cloudflare Ray ID when the response has one. In Cloudflare, open the zone's **Analytics → Events**, filter around the request time by host/path and Block or Challenge, then inspect the matching event's service and rule. If no event matches, the block may be at the origin or another CDN. Cloudflare recommends using a narrowly scoped custom-rule Skip exception when a specific false positive is confirmed; do not disable all firewall protections for this check.

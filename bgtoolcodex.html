@@ -72,6 +72,14 @@
   .affiliate-tool-output{margin-top:9px;}
   .affiliate-tool-output[hidden]{display:none!important;}
   .affiliate-tool-output textarea{min-height:90px;}
+  .postback-response{margin-top:10px;padding:12px;border:1px solid var(--line);border-radius:8px;background:var(--panel-2);}
+  .postback-response[hidden]{display:none!important;}
+  .postback-response-title{font-weight:700;color:var(--text);}
+  .postback-response-title.good{color:var(--lime);}
+  .postback-response-title.bad{color:var(--red);}
+  .postback-response-meta{margin-top:6px;color:var(--muted);font-size:12px;}
+  .postback-response pre{margin:9px 0 0;white-space:pre-wrap;overflow-wrap:anywhere;color:var(--text);font:12px/1.5 var(--mono);}
+  .postback-checkbox{display:flex;align-items:center;gap:8px;margin-top:8px;color:var(--text);font-size:12px;}
   .affiliate-checked-url{margin-top:12px;color:var(--muted);font:11px var(--mono);overflow-wrap:anywhere;}
   body.affiliate-theme .err{background:#fff0f2;color:#92263a;border-color:#e5a1ac;}
   @media(max-width:600px){.tool-navbar{gap:5px;padding:5px}.tool-nav-btn{gap:7px;padding:7px;font-size:11px}.tool-nav-mark{width:25px;height:25px}.affiliate-form{flex-direction:column}.affiliate-checker{padding:18px}.affiliate-hero h1{font-size:21px}}
@@ -366,6 +374,25 @@ Downsell 1: https://retraslim.app/orderdw1-v1?f=89s6iw&fnid=19&pfnid=17
         <div class="affiliate-checked-url" id="trackingCheckedUrl"></div>
       </div>
       <div class="affiliate-tools">
+        <section aria-labelledby="postbackToolTitle">
+          <h3 id="postbackToolTitle">Validate a postback URL</h3>
+          <div class="hint">Checks for an exact, case-sensitive BuyGoods token: {SUBID} or {SUBID2}–{SUBID5}. The test substitutes a unique test ID and sends amount=0, so it does not send a real commission. A tracker may still report “invalid click” because the test ID is synthetic.</div>
+          <input type="url" id="postbackUrlInput" placeholder="https://tracker.example/postback?clickid={SUBID}&amp;amount={COMMISSION_AMOUNT}" autocomplete="url">
+          <div class="affiliate-tool-row"><button class="btn-primary" id="testPostbackButton" type="button">Validate &amp; test postback</button><span class="hint" id="postbackStatus" aria-live="polite"></span></div>
+          <div class="postback-response" id="postbackResponse" role="status" aria-live="polite" hidden>
+            <div class="postback-response-title" id="postbackResponseTitle"></div>
+            <div class="postback-response-meta" id="postbackResponseMeta"></div>
+            <pre id="postbackResponseBody"></pre>
+          </div>
+        </section>
+        <section aria-labelledby="initiateCheckoutTitle">
+          <h3 id="initiateCheckoutTitle">Generate InitiateCheckout pixel</h3>
+          <div class="hint">Creates a hidden 1×1 image tag from the postback URL. For RedTrack, enable the option to ensure type=InitiateCheckout is present.</div>
+          <input type="url" id="initiateCheckoutUrlInput" placeholder="https://tracker.example/postback?clickid={SUBID}" autocomplete="url">
+          <label class="postback-checkbox"><input type="checkbox" id="redTrackPostback"> This postback uses RedTrack</label>
+          <div class="affiliate-tool-row"><button class="btn-primary" id="generateInitiateCheckoutButton" type="button">Generate InitiateCheckout script</button><span class="hint" id="initiateCheckoutStatus" aria-live="polite"></span></div>
+          <div class="affiliate-tool-output" id="initiateCheckoutOutputWrap" hidden><textarea id="initiateCheckoutOutput" readonly aria-label="InitiateCheckout tracking pixel"></textarea><div class="affiliate-tool-row"><button class="btn-ghost" id="copyInitiateCheckoutButton" type="button">Copy script</button></div></div>
+        </section>
         <section aria-labelledby="cleanBuyLinksTitle">
           <h3 id="cleanBuyLinksTitle">Clean BuyGoods buy links</h3>
           <div class="hint">Paste one or more links. The output keeps the integration fields: account_id, product_codename, lang and redirect.</div>
@@ -751,10 +778,10 @@ function generate(){
 
   const model = buildModel(pages, productName, thankYouUrl, accountId, splitFunnel);
   model.pages.forEach((p, i) => { p.id = `page-${i}`; p.originalNum = p.num; p.originalDownsellNum = p.sourceDownsellNum; });
+  model.pages.forEach(p => { p.originalLabel = labelFor(p); });
   lastModel = model;
   lastSettings = {accountId, token, lang, splitFunnel};
   syncSplitPageLabels();
-  model.pages.forEach(p => { p.originalLabel = labelFor(p); });
 
   renderFlow(model, splitFunnel);
   renderTable(model);
@@ -1386,19 +1413,49 @@ function syncSplitPageLabels(){
   if(!lastModel) return;
   lastModel.pages.forEach(p => { p.assignedLabel = null; });
   const sources = lastModel.pages.filter(p => p.splitByProduct && p.options.length >= 2);
+  const branchRoots = [];
   // Resolve cascades from Main outward so a branch target can itself start a later split.
   for(let pass = 0; pass < lastModel.pages.length; pass++){
     sources.forEach(source => {
       (source.buyTargetIds || []).forEach((targetId, i) => {
         const target = targetId && lastModel.pages.find(p => p.id === targetId);
         if(!target || target.type !== 'upsell') return;
-        target.assignedLabel = {
+        const assignedLabel = {
           num: source.type === 'main' ? 1 : stepNumFor(source) + 1,
           variant: String.fromCharCode(97 + i)
         };
+        target.assignedLabel = assignedLabel;
+        const existing = branchRoots.find(root => root.target === target && root.variant === assignedLabel.variant);
+        if(existing) existing.num = assignedLabel.num;
+        else branchRoots.push({target, variant:assignedLabel.variant, num:assignedLabel.num});
       });
     });
   }
+
+  // Renumber every later upsell in a branch from its branch entry, keeping its original label for display.
+  const rootVariants = new Map();
+  branchRoots.forEach(root => {
+    if(!rootVariants.has(root.target)) rootVariants.set(root.target, new Set());
+    rootVariants.get(root.target).add(root.variant);
+  });
+  branchRoots.forEach(root => {
+    let current = root.target;
+    let currentNum = root.num;
+    const visited = new Set();
+    while(current && !visited.has(current.id)){
+      visited.add(current.id);
+      const assignedVariant = current.assignedLabel?.variant;
+      if(assignedVariant && assignedVariant !== root.variant) break;
+      current.assignedLabel = {num:currentNum, variant:root.variant};
+      const next = findNextUpsellPage(lastModel.pages, current, root.variant);
+      if(!next) break;
+      const nextRootVariants = rootVariants.get(next);
+      if(nextRootVariants && !nextRootVariants.has(root.variant)) break;
+      current = next;
+      currentNum++;
+    }
+  });
+
   lastModel.pages.filter(p => p.isPopup).forEach(p => {
     const parent = lastModel.pages.find(u => u.type === 'upsell' && u.url === p.parentUpsellUrl);
     if(parent) p.assignedLabel = {num:stepNumFor(parent), variant:'pop'};

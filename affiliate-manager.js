@@ -15,6 +15,15 @@
   const extensionChannel = 'bgtool-tracking-extension-v1';
   let activeLocalRequestId = null;
   let localStartTimeout = null;
+  const postbackButton = document.getElementById('testPostbackButton');
+  const postbackInput = document.getElementById('postbackUrlInput');
+  const postbackStatus = document.getElementById('postbackStatus');
+  const postbackResponse = document.getElementById('postbackResponse');
+  const postbackResponseTitle = document.getElementById('postbackResponseTitle');
+  const postbackResponseMeta = document.getElementById('postbackResponseMeta');
+  const postbackResponseBody = document.getElementById('postbackResponseBody');
+  let activePostbackRequestId = null;
+  let postbackTimeout = null;
 
   localButton.addEventListener('click', () => {
     const value = document.getElementById('trackingPageUrl').value.trim();
@@ -57,6 +66,19 @@
   window.addEventListener('message', event => {
     const message = event.data;
     if (event.source !== window || event.origin !== window.location.origin || message?.channel !== extensionChannel) return;
+    if (activePostbackRequestId && message.requestId === activePostbackRequestId && message.type === 'postback-result') {
+      window.clearTimeout(postbackTimeout);
+      postbackTimeout = null;
+      postbackButton.disabled = false;
+      activePostbackRequestId = null;
+      if (message.status === 'result' && message.result) {
+        showPostbackResponse(message.result);
+        postbackStatus.textContent = 'Test request completed.';
+      } else {
+        postbackStatus.textContent = message.message || 'Could not send the test request.';
+      }
+      return;
+    }
     if (!activeLocalRequestId || message.requestId !== activeLocalRequestId) return;
 
     if (message.type === 'status') {
@@ -91,6 +113,152 @@
     }
     localButton.disabled = false;
     activeLocalRequestId = null;
+  });
+
+  postbackButton.addEventListener('click', () => {
+    const input = postbackInput.value.trim();
+    const parsed = inspectPostbackTemplate(input);
+    postbackResponse.hidden = true;
+    if (!parsed.valid) {
+      postbackStatus.textContent = parsed.message;
+      return;
+    }
+
+    activePostbackRequestId = crypto.randomUUID();
+    postbackButton.disabled = true;
+    postbackStatus.textContent = `Valid template (${parsed.subidTokens.join(', ')}). Sending a test with amount=0…`;
+    window.postMessage({
+      channel: extensionChannel,
+      type: 'test-postback',
+      requestId: activePostbackRequestId,
+      url: parsed.url.href,
+    }, window.location.origin);
+
+    const expectedRequestId = activePostbackRequestId;
+    window.clearTimeout(postbackTimeout);
+    postbackTimeout = window.setTimeout(() => {
+      if (activePostbackRequestId !== expectedRequestId) return;
+      activePostbackRequestId = null;
+      postbackButton.disabled = false;
+      postbackStatus.textContent = 'The verifier did not return a result. Reload the BuyGoods Tracking Verifier extension and try again.';
+    }, 20000);
+  });
+
+  function inspectPostbackTemplate(value) {
+    let url;
+    try { url = new URL(value); } catch (_) { return {valid:false, message:'Enter a valid postback URL.'}; }
+    if (!['https:', 'http:'].includes(url.protocol) || url.username || url.password) {
+      return {valid:false, message:'Use a public HTTP or HTTPS URL without embedded credentials.'};
+    }
+    if (url.port && url.port !== (url.protocol === 'https:' ? '443' : '80')) {
+      return {valid:false, message:'Use the standard HTTP or HTTPS port.'};
+    }
+    const candidates = [...url.searchParams.values()].flatMap(value => value.match(/\{SUBID\d*\}/gi) || []);
+    const validTokens = candidates.filter(token => /^\{SUBID(?:[2-5])?\}$/.test(token));
+    const invalidTokens = candidates.filter(token => !/^\{SUBID(?:[2-5])?\}$/.test(token));
+    if (!validTokens.length) {
+      return {valid:false, message:'No valid, case-sensitive SUBID macro found. Use {SUBID} or {SUBID2} through {SUBID5}.'};
+    }
+    if (invalidTokens.length) {
+      return {valid:false, message:`Invalid SUBID macro ${invalidTokens.join(', ')}. Only {SUBID} and {SUBID2}–{SUBID5} are accepted, with exact capitalization.`};
+    }
+    return {valid:true, url, subidTokens:[...new Set(validTokens)]};
+  }
+
+  function showPostbackResponse(data) {
+    const statusCode = Number(data.statusCode) || 0;
+    postbackResponseBody.textContent = data.body || data.error || 'The endpoint returned an empty response body.';
+    const interpretation = postbackStatusMeaning(statusCode, data.error);
+    postbackResponseTitle.textContent = interpretation.title;
+    postbackResponseTitle.className = `postback-response-title ${interpretation.good ? 'good' : 'bad'}`;
+    const finalUrl = data.finalUrl ? safeUrlForDisplay(data.finalUrl) : '';
+    postbackResponseMeta.textContent = `HTTP ${statusCode || 'unavailable'} · ${interpretation.meaning}${finalUrl ? ` · Final URL: ${finalUrl}` : ''}`;
+    postbackResponse.hidden = false;
+  }
+
+  function postbackStatusMeaning(statusCode, error) {
+    if (!statusCode) return {title:'Request did not receive an HTTP response', meaning:error || 'The browser could not reach the endpoint.', good:false};
+    const returnedBody = postbackResponseBody.textContent || '';
+    const errorCodeMatch = returnedBody.match(/\b(?:error(?:\s+code)?|code)\D{0,8}(\d{1,2})\b/i);
+    const isEverflow = (() => {
+      try {
+        const url = new URL(postbackInput.value.trim());
+        return url.hostname.toLowerCase().includes('g8mv2trk.com') || url.searchParams.has('nid');
+      } catch (_) { return false; }
+    })();
+    if (errorCodeMatch && isEverflow) {
+      const code = Number(errorCodeMatch[1]);
+      const knownCodes = {
+        2:'Advertiser domain is not on the allowlist.',
+        3:'The request IP is not on the allowlist.',
+        8:'Duplicate conversion: this transaction ID may already be recorded.',
+        11:'Invalid or missing network ID (nid).',
+        12:'Invalid transaction ID: it is missing, empty, or malformed.',
+        13:'Invalid click: the test ID has no matching click. A synthetic test ID can produce this expected result.',
+        14:'The click and conversion are associated with different offers.',
+        21:'Invalid verification token: the token may be missing or incorrect.',
+      };
+      if (knownCodes[code]) return {title:`Everflow error code ${code}`, meaning:knownCodes[code], good:false};
+    }
+    if (statusCode >= 200 && statusCode < 300) return {title:'Endpoint returned a success status', meaning:'The server accepted the HTTP request. Read its response below; this alone does not confirm conversion attribution.', good:true};
+    const meanings = {
+      400:'Bad request: required parameters may be missing or malformed.',
+      401:'Unauthorized: the verification token or account authentication may be invalid.',
+      403:'Forbidden: the endpoint refused access; check the token, account permissions, IP rules, or firewall.',
+      404:'Not found: the endpoint path or network/account ID may be wrong.',
+      405:'Method not allowed: this endpoint does not accept the request method used.',
+      409:'Conflict: the test transaction ID may already exist or be duplicated.',
+      422:'Unprocessable request: a parameter or its value did not pass validation.',
+      429:'Too many requests: the endpoint is rate limiting tests.',
+    };
+    if (meanings[statusCode]) return {title:'Endpoint returned an error status', meaning:meanings[statusCode], good:false};
+    if (statusCode >= 300 && statusCode < 400) return {title:'Endpoint redirected the request', meaning:'Check whether the redirect destination is the intended postback endpoint.', good:false};
+    if (statusCode >= 500) return {title:'The endpoint server failed', meaning:'A server-side error occurred. Check the tracking platform status or logs.', good:false};
+    return {title:'Endpoint returned a non-success status', meaning:'Read the endpoint response below for its specific explanation.', good:false};
+  }
+
+  function safeUrlForDisplay(value) {
+    try {
+      const url = new URL(value);
+      for (const key of [...url.searchParams.keys()]) {
+        if (/token|secret|key|auth/i.test(key)) url.searchParams.set(key, '[hidden]');
+      }
+      return url.toString();
+    } catch (_) { return ''; }
+  }
+
+  const initiateButton = document.getElementById('generateInitiateCheckoutButton');
+  const initiateUrlInput = document.getElementById('initiateCheckoutUrlInput');
+  const redTrackCheckbox = document.getElementById('redTrackPostback');
+  const initiateOutput = document.getElementById('initiateCheckoutOutput');
+  const initiateOutputWrap = document.getElementById('initiateCheckoutOutputWrap');
+  const initiateStatus = document.getElementById('initiateCheckoutStatus');
+  initiateButton.addEventListener('click', () => {
+    const raw = initiateUrlInput.value.trim();
+    initiateOutputWrap.hidden = true;
+    let url;
+    try { url = new URL(raw); } catch (_) { initiateStatus.textContent = 'Enter a valid URL first.'; return; }
+    if (!['https:', 'http:'].includes(url.protocol) || url.username || url.password) {
+      initiateStatus.textContent = 'Use a valid HTTP or HTTPS URL without embedded credentials.';
+      return;
+    }
+    const isRedTrack = redTrackCheckbox.checked
+      || /redtrack/i.test(`${url.hostname}${url.pathname}`)
+      || (url.pathname.toLowerCase().includes('postback') && url.searchParams.has('clickid'))
+      || url.searchParams.get('type') === 'InitiateCheckout';
+    if (isRedTrack && url.searchParams.get('type') !== 'InitiateCheckout') {
+      [...url.searchParams.keys()].filter(key => key.toLowerCase() === 'type').forEach(key => url.searchParams.delete(key));
+      url.searchParams.set('type', 'InitiateCheckout');
+    }
+    const imageUrl = url.toString().replace(/&/g, '&amp;').replace(/"/g, '&quot;');
+    initiateOutput.value = `<img src="${imageUrl}" width="1" height="1" style="display:none;" />`;
+    initiateOutputWrap.hidden = false;
+    initiateStatus.textContent = isRedTrack
+      ? 'RedTrack detected/selected; type=InitiateCheckout is present.'
+      : 'Pixel generated from the URL. Select the RedTrack option if this is a RedTrack postback.';
+  });
+  document.getElementById('copyInitiateCheckoutButton').addEventListener('click', async () => {
+    await copyText(initiateOutput.value, initiateStatus, 'InitiateCheckout pixel copied.');
   });
 
   function switchView(showAffiliateManager) {

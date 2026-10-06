@@ -13,8 +13,107 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     }));
     return true;
   }
-
+  if (message?.type === 'test-postback') {
+    testPostback(message, sender).then(sendResponse).catch(error => sendResponse({
+      status: 'error',
+      message: error.message || 'The postback test failed before receiving a response.',
+    }));
+    return true;
+  }
 });
+
+async function testPostback(message, sender) {
+  const appUrl = sender.url ? new URL(sender.url) : null;
+  if (!sender.tab?.id || !appUrl || !APP_ORIGINS.has(appUrl.origin)) {
+    return {status: 'error', message: 'Postback tests can only be started from the BuyGoods Affiliate Manager.'};
+  }
+  if (!/^[a-zA-Z0-9-]{8,80}$/.test(message.requestId || '')) {
+    return {status: 'error', message: 'The postback test request ID is invalid.'};
+  }
+
+  const target = parsePublicTarget(message.url);
+  if (!target) return {status: 'error', message: 'Use a public HTTP or HTTPS postback URL on port 80 or 443.'};
+  if (!await chrome.permissions.contains({origins: [`${target.origin}/*`]})) {
+    return {status: 'error', message: `The extension does not have site access to ${target.host}. Set Site access to On all sites, then reload it.`};
+  }
+
+  const subidTokens = [...target.searchParams.values()].flatMap(value => value.match(/\{SUBID(?:[2-5])?\}/g) || []);
+  if (!subidTokens.length) {
+    return {status: 'error', message: 'No valid case-sensitive {SUBID} or {SUBID2}–{SUBID5} macro was found.'};
+  }
+
+  // Everflow transaction IDs are 32-character hex strings; use a syntactically realistic but synthetic ID.
+  const testId = crypto.randomUUID().replace(/-/g, '');
+  for (const [key, value] of [...target.searchParams.entries()]) {
+    const testValue = value
+      .replace(/\{SUBID(?:[2-5])?\}/g, testId)
+      .replace(/\{COMMISSION_AMOUNT\}/g, '0')
+      .replace(/\{ORDERID\}/g, testId)
+      .replace(/\{PRODUCT_CODENAME\}/g, 'BG_TEST_PRODUCT')
+      .replace(/\{EMAILHASH\}/g, '0'.repeat(64))
+      .replace(/\{CONV_TYPE\}/g, 'sale');
+    target.searchParams.set(key, testValue);
+  }
+  for (const key of [...target.searchParams.keys()]) {
+    if (/^(amount|commission|commission_?amount|sum|payout|revenue|sale_amount)$/i.test(key)) target.searchParams.set(key, '0');
+  }
+  target.searchParams.set('amount', '0');
+
+  try {
+    const response = await fetch(target.href, {
+      method: 'GET',
+      credentials: 'omit',
+      cache: 'no-store',
+      redirect: 'manual',
+      referrerPolicy: 'no-referrer',
+      signal: AbortSignal.timeout(15000),
+    });
+    if (response.type === 'opaqueredirect') {
+      return {
+        status: 'result',
+        result: {
+          statusCode: 0,
+          error: 'The endpoint redirected the request. Chrome hides this cross-site redirect response; use the final postback endpoint URL directly for the test.',
+          finalUrl: '',
+          testId,
+          subidTokens: [...new Set(subidTokens)],
+        },
+      };
+    }
+    let body = (await response.text()).slice(0, 3000);
+    for (const [key, value] of target.searchParams.entries()) {
+      if (/token|secret|api.?key|auth/i.test(key) && value) {
+        body = body.replaceAll(value, '[hidden]').replaceAll(encodeURIComponent(value), '[hidden]');
+      }
+    }
+    const finalUrl = new URL(response.url || target.href);
+    for (const key of [...finalUrl.searchParams.keys()]) {
+      if (/token|secret|api.?key|auth/i.test(key)) finalUrl.searchParams.set(key, '[hidden]');
+    }
+    return {
+      status: 'result',
+      result: {
+        statusCode: response.status,
+        ok: response.ok,
+        body,
+        finalUrl: finalUrl.href,
+        testId,
+        subidTokens: [...new Set(subidTokens)],
+      },
+    };
+  } catch (error) {
+    return {
+      status: 'result',
+      result: {
+        statusCode: 0,
+        error: error.name === 'TimeoutError' ? 'The server did not answer within 15 seconds.' : (error.message || 'The browser could not reach the endpoint.'),
+        finalUrl: '',
+        testId,
+        subidTokens: [...new Set(subidTokens)],
+      },
+    };
+  }
+}
 
 async function handleVerifyRequest(message, sender) {
   const appUrl = sender.url ? new URL(sender.url) : null;
