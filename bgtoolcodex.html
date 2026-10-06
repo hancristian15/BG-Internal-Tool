@@ -1554,7 +1554,6 @@ function syncSplitPageLabels(){
       variants:new Set(assignment.variants)
     }));
     const addPathLabel = (page, num, variant) => {
-      if(assignments.has(page.id)) return;
       const label = labels.get(page.id) || {num, variants:new Set()};
       label.num = Math.min(label.num, num);
       label.variants.add(variant);
@@ -1592,8 +1591,10 @@ function syncSplitPageLabels(){
             if(!memberships.length || memberships.includes(variant)) { next = candidate; break; }
           }
           if(!next) break;
-          const explicitNext = assignments.get(next.id);
-          currentNum = explicitNext ? explicitNext.num : currentNum + 1;
+          // The page's position on this branch determines its displayed step.
+          // An explicit split destination may have a stale number from another
+          // path, so never use that number to advance this route.
+          currentNum += 1;
           addPathLabel(next, currentNum, variant);
           current = next;
         }
