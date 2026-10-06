@@ -1458,8 +1458,7 @@ function syncSplitPageLabels(){
   if(!lastModel) return;
   lastModel.pages.forEach(p => { p.assignedLabel = null; });
   const sources = lastModel.pages.filter(p => p.splitByProduct && p.options.length >= 2);
-  // Assign branch labels only to the page explicitly selected in each slot.
-  // Later unbranched pages remain shared and are reached in flow order.
+  // Recalculate until nested product splits and their step numbers settle.
   for(let pass = 0; pass < lastModel.pages.length; pass++){
     const assignments = new Map();
     sources.forEach(source => {
@@ -1475,10 +1474,59 @@ function syncSplitPageLabels(){
         assignments.set(target.id, assignment);
       });
     });
-    assignments.forEach(({target, num, variants}) => {
-      const list = [...variants].sort();
-      target.assignedLabel = {num, variants:list, variant:list.length === 1 ? list[0] : null};
+
+    const labels = new Map();
+    assignments.forEach((assignment, id) => labels.set(id, {
+      num:assignment.num,
+      variants:new Set(assignment.variants)
+    }));
+    const addPathLabel = (page, num, variant) => {
+      if(assignments.has(page.id)) return;
+      const label = labels.get(page.id) || {num, variants:new Set()};
+      label.num = Math.min(label.num, num);
+      label.variants.add(variant);
+      labels.set(page.id, label);
+    };
+
+    // Each explicitly selected upsell starts a numbered path. Following
+    // upsells are renumbered in sequence; shared pages collect every branch
+    // that reaches them so they render on each applicable branch row.
+    assignments.forEach((root, rootId) => {
+      [...root.variants].forEach(variant => {
+        let current = root.target;
+        let currentNum = root.num;
+        const visited = new Set([rootId]);
+        while(current && !visited.has(current.id)){
+          visited.add(current.id);
+          const start = lastModel.pages.indexOf(current);
+          let next = null;
+          for(let i = start + 1; i < lastModel.pages.length; i++){
+            const candidate = lastModel.pages[i];
+            if(candidate.type !== 'upsell' || candidate.isPopup) continue;
+            const explicit = assignments.get(candidate.id);
+            const memberships = explicit ? [...explicit.variants] : (candidate.variant ? [candidate.variant] : []);
+            if(!memberships.length || memberships.includes(variant)) { next = candidate; break; }
+          }
+          if(!next) break;
+          const explicitNext = assignments.get(next.id);
+          currentNum = explicitNext ? explicitNext.num : currentNum + 1;
+          addPathLabel(next, currentNum, variant);
+          current = next;
+        }
+      });
     });
+
+    const previousSignature = lastModel.pages.map(p => p.assignedLabel
+      ? `${p.id}:${p.assignedLabel.num}:${stepVariantsFor(p).join(',')}` : `${p.id}:`).join('|');
+    lastModel.pages.forEach(p => {
+      const label = labels.get(p.id);
+      if(!label){ p.assignedLabel = null; return; }
+      const variants = [...label.variants].sort();
+      p.assignedLabel = {num:label.num, variants, variant:variants.length === 1 ? variants[0] : null};
+    });
+    const nextSignature = lastModel.pages.map(p => p.assignedLabel
+      ? `${p.id}:${p.assignedLabel.num}:${p.assignedLabel.variants.join(',')}` : `${p.id}:`).join('|');
+    if(previousSignature === nextSignature) break;
   }
 
   lastModel.pages.filter(p => p.isPopup).forEach(p => {
