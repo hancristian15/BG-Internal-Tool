@@ -1,5 +1,6 @@
 const { randomBytes, randomUUID } = require('node:crypto');
 const { S3Client, PutObjectCommand, GetObjectCommand, DeleteObjectCommand } = require('@aws-sdk/client-s3');
+const { requireToolSession } = require('../lib/require-tool-session');
 
 const SUPABASE_URL = process.env.SUPABASE_URL;
 const SUPABASE_SECRET_KEY = process.env.SUPABASE_SECRET_KEY;
@@ -197,6 +198,9 @@ async function deleteDocument(id, res) {
 module.exports = async function handler(req, res) {
   const url = new URL(req.url, `https://${req.headers.host || 'localhost'}`);
   const action = url.searchParams.get('action') || '';
+
+  // Shared previews are intentionally public; every other document operation is private.
+  if (!(req.method === 'GET' && action === 'share') && !requireToolSession(req, res)) return;
 
   if (!TABLE_URL || !SUPABASE_SECRET_KEY || !s3 || !R2_BUCKET) {
     return send(res, 503, { error: 'Document storage is not configured' });

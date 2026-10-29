@@ -1,5 +1,6 @@
 const SUPABASE_URL = process.env.SUPABASE_URL;
 const SUPABASE_SECRET_KEY = process.env.SUPABASE_SECRET_KEY;
+const { requireToolSession } = require('../lib/require-tool-session');
 
 function send(res, status, body) {
   res.status(status).setHeader('Content-Type', 'application/json; charset=utf-8');
@@ -8,6 +9,7 @@ function send(res, status, body) {
 }
 
 module.exports = async function handler(req, res) {
+  if (!requireToolSession(req, res)) return;
   if (req.method !== 'GET' && req.method !== 'POST') {
     res.setHeader('Allow', 'GET, POST');
     return send(res, 405, { error: 'Method not allowed' });

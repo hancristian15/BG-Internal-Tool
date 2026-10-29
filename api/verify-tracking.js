@@ -1,5 +1,6 @@
 const dns = require('node:dns').promises;
 const net = require('node:net');
+const { requireToolSession } = require('../lib/require-tool-session');
 
 function send(res, status, body) {
   res.status(status).setHeader('Content-Type', 'application/json; charset=utf-8');
@@ -59,6 +60,7 @@ function bodyOf(req) {
 }
 
 module.exports = async function verifyTracking(req, res) {
+  if (!requireToolSession(req, res)) return;
   if (req.method !== 'POST') {
     res.setHeader('Allow', 'POST');
     return send(res, 405, {error:'Method not allowed'});

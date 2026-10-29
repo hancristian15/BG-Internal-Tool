@@ -25,13 +25,9 @@ The app also needs the existing `SUPABASE_URL` and `SUPABASE_SECRET_KEY` variabl
 
 ## Tool login and shared previews
 
-The builder and its private APIs require a password login. In Vercel Project Settings → Environment Variables, add `TOOL_LOGIN_PASSWORD` with the value `bgteam` for each environment you use (Development, Preview, and Production), then redeploy. Do not put the password in Git or in the browser code. The app signs an HTTP-only session cookie that expires after 7 days; it uses `SUPABASE_SECRET_KEY` to sign sessions unless you also configure a separate random `TOOL_SESSION_SECRET`.
+Run `supabase/migrations/20261029000000_tool_access_password.sql` once in the Supabase SQL Editor, then initialize the password record with `insert into public.tool_access_settings (singleton, password_hash) values (true, extensions.crypt('YOUR_TEAM_PASSWORD', extensions.gen_salt('bf', 12))) on conflict (singleton) do update set password_hash = excluded.password_hash, updated_at = now();`. Replace `YOUR_TEAM_PASSWORD` with your chosen value in the SQL Editor; do not commit the actual password. The database stores only a bcrypt hash. The login API verifies it through Supabase using the existing server-side `SUPABASE_URL` and `SUPABASE_SECRET_KEY` variables. No additional Vercel environment variable or proxy configuration is needed.
 
-Shared document URLs remain public and read-only. They are served from a separate preview page, so recipients can see the document and its creation date without loading the builder or Affiliate Manager. Document search, edit, delete, and the other tool APIs require an authenticated session.
-
-### 3. Redeploy
-
-After running the SQL and adding the variables in Vercel, redeploy the project. The API route is `api/documents.js`; Vercel installs the S3 client dependency from `package.json`.
+Without a `share` query parameter, the page checks for a signed, HTTP-only login session before showing the tool. The session lasts 7 days and is signed using the existing `SUPABASE_SECRET_KEY`. Private document operations, click totals, and tracking verification APIs also require that session. A URL with `?share=...` opens only the read-only preview and remains public, including its creation date.
 
 ## How saved documents work
 

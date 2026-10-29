@@ -198,6 +198,15 @@
   .modal p{color:var(--muted);font-size:13px;}
   .modal-actions{display:flex;gap:9px;justify-content:flex-end;flex-wrap:wrap;margin-top:18px;}
   .shared-output{white-space:pre-wrap;overflow-wrap:anywhere;background:var(--panel-2);border:1px solid var(--line);border-radius:6px;padding:16px;font-family:var(--mono);font-size:11.5px;max-height:70vh;overflow:auto;}
+  body.auth-pending .wrap{display:none;}
+  #toolLoginGate{display:none;min-height:100vh;align-items:center;justify-content:center;padding:24px;background:var(--bg);}
+  body.auth-required #toolLoginGate{display:flex;}
+  .tool-login-card{width:min(410px,100%);padding:28px;background:var(--panel);border:1px solid var(--line);border-radius:12px;box-shadow:0 18px 55px rgba(0,0,0,.25);}
+  .tool-login-card h1{margin:0 0 7px;font-size:22px;}
+  .tool-login-card p{margin:0 0 20px;color:var(--muted);font-size:13px;}
+  .tool-login-card input{margin-bottom:12px;}
+  .tool-login-card button{width:100%;}
+  #toolLoginError{min-height:18px;margin-top:10px;color:var(--red);font-size:12px;}
   @media(max-width:600px){.doc-search-row,.doc-card{align-items:stretch;flex-direction:column}.doc-card-actions{justify-content:flex-start}}
   select{
     width:100%;background:var(--panel-2);border:1px solid var(--line);border-radius:6px;
@@ -212,7 +221,17 @@
   .toggle-btn.on{background:var(--amber);color:#1a1407;border-color:var(--amber);}
 </style>
 </head>
-<body>
+<body class="auth-pending">
+<section id="toolLoginGate" aria-labelledby="toolLoginTitle">
+  <form class="tool-login-card" id="toolLoginForm">
+    <h1 id="toolLoginTitle">BuyGoods Internal Tool</h1>
+    <p>Enter the team password to continue.</p>
+    <label for="toolLoginPassword">Password</label>
+    <input type="password" id="toolLoginPassword" autocomplete="current-password" required>
+    <button class="btn-primary" id="toolLoginButton" type="submit">Log in</button>
+    <div id="toolLoginError" role="status" aria-live="polite"></div>
+  </form>
+</section>
 <div class="wrap">
   <nav class="tool-navbar" aria-label="BuyGoods tools">
     <button class="tool-nav-btn" id="builderNav" type="button" aria-pressed="true">
@@ -847,6 +866,49 @@ async function apiJson(url, options){
   return body;
 }
 
+async function initializeAccess(){
+  const body = document.body;
+  const shareToken = new URLSearchParams(window.location.search).get('share');
+  body.classList.remove('auth-pending');
+  if(shareToken){
+    body.classList.remove('auth-required');
+    loadSharedPreview(shareToken);
+    return;
+  }
+  try {
+    const response = await fetch('/api/auth?action=check', {cache:'no-store'});
+    const data = await response.json().catch(() => ({}));
+    if(response.ok && data.authenticated){
+      body.classList.remove('auth-required');
+      return;
+    }
+  } catch(error) {
+    console.error('Could not check tool login session:', error);
+  }
+  body.classList.add('auth-required');
+}
+
+document.getElementById('toolLoginForm')?.addEventListener('submit', async event => {
+  event.preventDefault();
+  const button = document.getElementById('toolLoginButton');
+  const errorBox = document.getElementById('toolLoginError');
+  button.disabled = true;
+  errorBox.textContent = '';
+  try {
+    const response = await fetch('/api/auth?action=login', {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({password:document.getElementById('toolLoginPassword').value}),
+    });
+    const data = await response.json().catch(() => ({}));
+    if(!response.ok) throw new Error(data.error || `Login failed (${response.status})`);
+    window.location.reload();
+  } catch(error) {
+    errorBox.textContent = error.message;
+  } finally {
+    button.disabled = false;
+  }
+});
+
 async function logoutTool(){
   try { await fetch('/api/auth?action=logout', {method:'POST'}); }
   finally { window.location.replace('/'); }
@@ -1104,8 +1166,7 @@ function initializeDocumentUi(){
     if(accountId.value !== digits) accountId.value = digits;
   });
   document.getElementById('output')?.addEventListener('input', markDocumentDirty);
-  const token = new URLSearchParams(window.location.search).get('share');
-  if(token) loadSharedPreview(token);
+  initializeAccess();
 }
 
 initializeDocumentUi();
