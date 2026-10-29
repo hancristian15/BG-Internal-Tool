@@ -470,6 +470,14 @@ function b64(str){
   catch(e){ return btoa(str); }
 }
 
+function normalizeOfferFlowUrls(rawText){
+  return String(rawText).replace(/(^|[\s(\[<{])((?:www\.)?(?:[a-z\d](?:[a-z\d-]{0,61}[a-z\d])?\.)+[a-z]{2,63}(?::\d{1,5})?(?:[/?#][^\s)\]<>*"']*)?)/gi, (match, prefix, candidate) => {
+    const trailingPunctuation = candidate.match(/[.,;!?]+$/)?.[0] || '';
+    const url = trailingPunctuation ? candidate.slice(0, -trailingPunctuation.length) : candidate;
+    return `${prefix}https://${url}${trailingPunctuation}`;
+  });
+}
+
 function cleanText(raw){
   return raw
     .replace(/\*\*/g, '')
@@ -517,7 +525,7 @@ function extractPackCounts(block){
 }
 
 function parseOfferFlow(rawText){
-  const text = cleanText(rawText);
+  const text = cleanText(normalizeOfferFlowUrls(rawText));
   // Capture standard steps, letter variants, and explicit popup children.
   const labelRe = /\b(Main\s*page|Upsell\s+\d+(?:\s+(?:[a-z]|pop))?|Downsell\s+\d+(?:\s+(?:[a-z]|pop(?:\s+\d+)?))?)\s*:/gi;
   const matches = [];
