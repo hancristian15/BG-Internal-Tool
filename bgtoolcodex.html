@@ -1211,6 +1211,15 @@ function ensureBranchOrders(model = lastModel){
   });
 }
 
+function branchMembershipsForPage(page, model = lastModel){
+  if(!page || !model) return [];
+  const memberships = new Set(stepVariantsFor(page).filter(value => value !== 'pop'));
+  Object.entries(model.branchOrders || {}).forEach(([branch, ids]) => {
+    if(Array.isArray(ids) && ids.includes(page.id) && !(page.excludedBranches || []).includes(branch)) memberships.add(branch);
+  });
+  return [...memberships];
+}
+
 function escapeHtml(value){
   return String(value ?? '').replace(/[&<>"']/g, ch => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
 }
@@ -1596,7 +1605,8 @@ function removeFlowPage(pageId, branchVariant = null){
   if(!lastModel) return;
   const page = lastModel.pages.find(p => p.id === pageId);
   if(!page || page.type === 'main') return;
-  const branches = stepVariantsFor(page).filter(value => value !== 'pop');
+  if(branchVariant) ensureBranchOrders();
+  const branches = branchMembershipsForPage(page);
   if(branchVariant && branches.includes(branchVariant) && branches.length > 1){
     if(!window.confirm(`Remove ${labelFor(page)} from Branch ${branchVariant.toUpperCase()} only?`)) return;
     ensureBranchOrders();
@@ -1618,7 +1628,8 @@ function removeFlowPage(pageId, branchVariant = null){
       return !(page.type === 'upsell' && item?.isPopup && item.parentUpsellUrl === page.url);
     });
     syncSplitPageLabels();
-    if(!stepVariantsFor(page).some(value => value !== 'pop')){
+    const remainingBranches = branchMembershipsForPage(page).filter(value => value !== branchVariant);
+    if(!remainingBranches.length){
       const orphanIds = new Set([page.id]);
       if(page.type === 'upsell'){
         lastModel.pages.filter(item => item.isPopup && item.parentUpsellUrl === page.url).forEach(item => orphanIds.add(item.id));
