@@ -137,6 +137,10 @@
   .flow-remove{padding:2px 6px;background:rgba(180,50,58,.08);border:1px solid rgba(220,90,95,.35);color:#e58a8d;border-radius:5px;font-size:10px;line-height:1.2;align-self:flex-start;margin-top:4px;}
   .flow-remove:hover{background:var(--red);color:#fff;border-color:var(--red);}
   .route-label{font-size:9px;color:var(--muted);line-height:1.3;margin-top:3px;white-space:normal;max-width:210px;}
+  .route-path{font-family:var(--mono);font-size:10px;color:var(--lime);margin-top:3px;overflow-wrap:anywhere;}
+  .branch-add-controls{display:flex;align-items:center;gap:5px;margin:5px 10px 5px 0;}
+  .branch-add-controls select{width:auto;max-width:190px;padding:5px 7px;font-size:10px;}
+  .branch-add-controls button{padding:5px 8px;font-size:10px;}
   .product-split{display:flex;flex-direction:column;gap:4px;padding:6px;margin:4px 8px;min-width:155px;background:rgba(232,179,57,.04);border:1px dashed rgba(232,179,57,.4);border-radius:6px;align-self:center;}
   .product-drop-slot{font-family:var(--mono);font-size:10px;color:var(--muted);padding:6px 8px;border:1px dashed var(--line);border-radius:4px;min-width:135px;}
   .product-drop-slot.drag-over{border-color:var(--amber);background:rgba(232,179,57,.12);color:var(--text);}
@@ -853,7 +857,8 @@ function currentBuilderState(){
   return {
     accountId, productName, token, thankYouUrl, offerFlow, lang, splitFunnel,
     thankYouUrlResolved:lastModel?.thankYouUrl || '', fallbackProductName:lastModel?.fallbackProductName || productName,
-    pages:lastModel?.pages.map(page => JSON.parse(JSON.stringify(page))) || []
+    pages:lastModel?.pages.map(page => JSON.parse(JSON.stringify(page))) || [],
+    branchOrders:lastModel?.branchOrders ? JSON.parse(JSON.stringify(lastModel.branchOrders)) : {}
   };
 }
 
@@ -980,7 +985,7 @@ async function loadSavedDocument(id){
     document.getElementById('lang').value = state.lang || 'en';
     document.getElementById('splitToggle')?.classList.toggle('on', !!state.splitFunnel);
     if(document.getElementById('splitToggle')) document.getElementById('splitToggle').textContent = state.splitFunnel ? 'Split Funnel: ON' : 'Split Funnel: OFF';
-    lastModel = {pages:state.pages.map(page => JSON.parse(JSON.stringify(page))), thankYouUrl:state.thankYouUrlResolved || '', fallbackProductName:state.fallbackProductName || state.productName};
+    lastModel = {pages:state.pages.map(page => JSON.parse(JSON.stringify(page))), branchOrders:state.branchOrders || {}, thankYouUrl:state.thankYouUrlResolved || '', fallbackProductName:state.fallbackProductName || state.productName};
     lastSettings = {accountId:state.accountId || doc.account_id, productName:state.productName || doc.product_name, token:state.token || '', lang:state.lang || 'en', splitFunnel:!!state.splitFunnel};
     editingDocumentId = doc.id;
     document.getElementById('deleteDocumentButton').style.display = 'inline-block';
@@ -1082,20 +1087,39 @@ initializeDocumentUi();
 
 function stepNumFor(p){ return p.assignedLabel ? p.assignedLabel.num : p.num; }
 function stepVariantsFor(p){
-  if(p.assignedLabel){
-    if(Array.isArray(p.assignedLabel.variants)) return p.assignedLabel.variants;
-    return p.assignedLabel.variant ? [p.assignedLabel.variant] : [];
-  }
-  return p.variant ? [p.variant] : [];
+  const assigned = p.assignedLabel
+    ? (Array.isArray(p.assignedLabel.variants) ? p.assignedLabel.variants : (p.assignedLabel.variant ? [p.assignedLabel.variant] : []))
+    : (p.variant ? [p.variant] : []);
+  const variants = [...new Set([...assigned, ...(Array.isArray(p.manualBranchVariants) ? p.manualBranchVariants : [])])];
+  const excluded = new Set(p.excludedBranches || []);
+  return variants.filter(v => v === 'pop' || !excluded.has(v));
 }
 function stepVariantFor(p){
   const variants = stepVariantsFor(p);
   return variants.length === 1 ? variants[0] : null;
 }
 function pageMatchesBranch(p, branch){
+  const excluded = new Set(p.excludedBranches || []);
   const variants = stepVariantsFor(p).filter(v => v !== 'pop');
-  if(Array.isArray(branch)) return !variants.length || branch.every(v => variants.includes(v));
-  return branch ? (!variants.length || variants.includes(branch)) : !variants.length;
+  if(Array.isArray(branch)) return branch.every(v => !excluded.has(v) && (!variants.length || variants.includes(v)));
+  return branch ? (!excluded.has(branch) && (!variants.length || variants.includes(branch))) : !variants.length;
+}
+function explicitBranchMemberships(page, assignments){
+  if(Array.isArray(page.manualBranchVariants)) return page.manualBranchVariants;
+  const assigned = assignments?.get(page.id);
+  if(assigned) return [...assigned.variants];
+  return page.variant ? [page.variant] : [];
+}
+function pagePathname(value){
+  try {
+    const pathname = new URL(value).pathname;
+    return pathname && pathname !== '/' ? pathname : '';
+  } catch(_) { return ''; }
+}
+function branchOrderedPages(pages, branch){
+  const ids = typeof branch === 'string' ? lastModel?.branchOrders?.[branch] : null;
+  if(!Array.isArray(ids)) return pages;
+  return ids.map(id => pages.find(page => page.id === id)).filter(Boolean);
 }
 function routeBranchesFor(p, fallbackPage = null){
   const own = stepVariantsFor(p).filter(v => v !== 'pop');
@@ -1105,10 +1129,15 @@ function routeBranchesFor(p, fallbackPage = null){
 }
 
 function findNextFunnelPage(pages, source, branch){
-  const start = pages.indexOf(source);
+  if(Array.isArray(branch)){
+    const nextPages = branch.map(value => findNextFunnelPage(pages, source, value));
+    return nextPages.length && nextPages[0] && nextPages.every(page => page?.id === nextPages[0].id) ? nextPages[0] : null;
+  }
+  const ordered = branchOrderedPages(pages, branch);
+  const start = source.type === 'main' ? -1 : ordered.indexOf(source);
   if(start < 0) return null;
-  for(let i=start+1; i<pages.length; i++){
-    const candidate = pages[i];
+  for(let i=start+1; i<ordered.length; i++){
+    const candidate = ordered[i];
     if(!['upsell','downsell'].includes(candidate.type) || candidate.isPopup) continue;
     if(pageMatchesBranch(candidate, branch)) return candidate;
   }
@@ -1116,10 +1145,15 @@ function findNextFunnelPage(pages, source, branch){
 }
 
 function findNextUpsellPage(pages, source, branch){
-  const start = pages.indexOf(source);
+  if(Array.isArray(branch)){
+    const nextPages = branch.map(value => findNextUpsellPage(pages, source, value));
+    return nextPages.length && nextPages[0] && nextPages.every(page => page?.id === nextPages[0].id) ? nextPages[0] : null;
+  }
+  const ordered = branchOrderedPages(pages, branch);
+  const start = source.type === 'main' ? -1 : ordered.indexOf(source);
   if(start < 0) return null;
-  for(let i=start+1; i<pages.length; i++){
-    const candidate = pages[i];
+  for(let i=start+1; i<ordered.length; i++){
+    const candidate = ordered[i];
     if(candidate.type !== 'upsell' || candidate.isPopup) continue;
     if(pageMatchesBranch(candidate, branch)) return candidate;
   }
@@ -1143,6 +1177,38 @@ function findNextNoThanksPage(pages, source, branch){
     return parent ? findNextFunnelPage(pages, parent, branch) : findNextFunnelPage(pages, source, branch);
   }
   return findNextFunnelPage(pages, source, branch);
+}
+
+function buildBranchSequence(model, branch){
+  const pages = model.pages;
+  const mainPage = pages.find(page => page.type === 'main');
+  const optionIndex = branch.charCodeAt(0) - 97;
+  const targetId = mainPage?.buyTargetIds?.[optionIndex];
+  const targetUrl = mainPage?.buyTargets?.[optionIndex];
+  let current = (targetId && pages.find(page => page.id === targetId && pageMatchesBranch(page, branch)))
+    || (targetUrl && pages.find(page => page.type === 'upsell' && page.url === targetUrl && pageMatchesBranch(page, branch)))
+    || pages.find(page => page.type === 'upsell' && pageMatchesBranch(page, branch))
+    || (mainPage && findNextFunnelPage(pages, mainPage, branch));
+  const chain = [];
+  const visited = new Set();
+  while(current && !visited.has(current.id)){
+    visited.add(current.id);
+    chain.push(current);
+    pages.filter(page => page.isPopup && page.parentUpsellUrl === current.url)
+      .sort((a,b) => a.popupIndex - b.popupIndex)
+      .forEach(page => { if(!visited.has(page.id)){ visited.add(page.id); chain.push(page); } });
+    current = findNextFunnelPage(pages, current, branch);
+  }
+  return chain;
+}
+
+function ensureBranchOrders(model = lastModel){
+  if(!model) return;
+  model.branchOrders = model.branchOrders || {};
+  const branches = [...new Set(model.pages.flatMap(page => stepVariantsFor(page).filter(value => value !== 'pop')))];
+  branches.forEach(branch => {
+    if(!Array.isArray(model.branchOrders[branch])) model.branchOrders[branch] = buildBranchSequence(model, branch).map(page => page.id);
+  });
 }
 
 function escapeHtml(value){
@@ -1190,7 +1256,7 @@ function labelFor(p){
 }
 
 // Helper: renders a chain of page nodes + arrows + thank-you into any container
-function appendChain(container, pages, includeThankYou = true){
+function appendChain(container, pages, includeThankYou = true, branchVariant = null){
   pages.forEach((p, pageIndex) => {
     const node = document.createElement('div');
     node.className = `node ${p.type}`;
@@ -1204,6 +1270,13 @@ function appendChain(container, pages, includeThankYou = true){
       ? (declinePage ? labelFor(declinePage) : 'No next popup')
       : (declinePage ? labelFor(declinePage) : (p.declineTarget ? 'Thank you' : ''));
     node.innerHTML = `<span class="t">${labelFor(p)}</span>${p.originalLabel && p.originalLabel !== labelFor(p) ? `<span class="old-label">(old ${p.originalLabel})</span>` : ''}${p.codenames.map((c,i)=>`<span class="codename-editable" data-page-id="${p.id}" data-codename-index="${i}" title="${escapeHtml(codenameExplanation(p,i))} Double-click to edit">${escapeHtml(c)}</span>`).join('')}<span class="route-label">Buy/Yes → ${buyRoute}</span>${declineRoute ? `<span class="route-label">No/Decline → ${declineRoute}</span>` : ''}`;
+    const path = pagePathname(p.url);
+    if(path){
+      const pathLabel = document.createElement('span');
+      pathLabel.className = 'route-path';
+      pathLabel.textContent = path;
+      node.insertBefore(pathLabel, node.querySelector('.route-label'));
+    }
     const plus = document.createElement('button');
     plus.type = 'button'; plus.className = 'flow-plus'; plus.textContent = p.splitByProduct ? '−' : '+';
     plus.title = p.options.length >= 2 ? (p.splitByProduct ? 'Remove product split' : 'Split Buy/Yes by product option') : 'Requires at least two product options';
@@ -1212,17 +1285,17 @@ function appendChain(container, pages, includeThankYou = true){
     node.appendChild(plus);
     if(p.type !== 'main'){
       const remove = document.createElement('button');
-      remove.type = 'button'; remove.className = 'flow-remove'; remove.textContent = 'Remove';
-      remove.title = `Remove ${labelFor(p)} from this funnel`;
+      remove.type = 'button'; remove.className = 'flow-remove'; remove.textContent = branchVariant ? `Remove ${branchVariant.toUpperCase()}` : 'Remove';
+      remove.title = branchVariant ? `Remove ${labelFor(p)} from Branch ${branchVariant.toUpperCase()} only` : `Remove ${labelFor(p)} from this funnel`;
       remove.draggable = false;
-      remove.addEventListener('click', e => { e.preventDefault(); e.stopPropagation(); removeFlowPage(p.id); });
+      remove.addEventListener('click', e => { e.preventDefault(); e.stopPropagation(); removeFlowPage(p.id, branchVariant); });
       node.appendChild(remove);
     }
     node.addEventListener('dragstart', e => { e.dataTransfer.setData('text/plain', p.id); node.classList.add('dragging'); });
     node.addEventListener('dragend', () => node.classList.remove('dragging'));
     node.addEventListener('dragover', e => { e.preventDefault(); node.classList.add('drag-over'); });
     node.addEventListener('dragleave', () => node.classList.remove('drag-over'));
-    node.addEventListener('drop', e => { e.preventDefault(); node.classList.remove('drag-over'); reorderPages(e.dataTransfer.getData('text/plain'), p.id); });
+    node.addEventListener('drop', e => { e.preventDefault(); node.classList.remove('drag-over'); reorderPages(e.dataTransfer.getData('text/plain'), p.id, branchVariant); });
     container.appendChild(node);
     if(p.splitByProduct && p.options.length >= 2){
       const split = document.createElement('div'); split.className = 'product-split';
@@ -1264,7 +1337,7 @@ function renderFlow(model, splitFunnel){
   box.innerHTML = '';
 
   // 'pop' is not a letter-branch variant — exclude it from split display
-  const hasVariants = model.pages.some(p => stepVariantsFor(p).some(v => v !== 'pop'));
+  const hasVariants = model.pages.some(p => stepVariantsFor(p).some(v => v !== 'pop')) || Object.keys(model.branchOrders || {}).length > 0;
   const hasProductSplit = model.pages.some(p => p.splitByProduct && p.options.length >= 2);
 
   if((!splitFunnel && !hasProductSplit) || !hasVariants){
@@ -1280,33 +1353,16 @@ function renderFlow(model, splitFunnel){
 
   const mainPage   = model.pages.find(p => p.type === 'main');
   // Only letter variants (a, b, c…) — never 'pop'
-  const variants   = [...new Set(
-    model.pages.flatMap(p => stepVariantsFor(p).filter(v => v !== 'pop'))
-  )].sort();
-  const routeGroups = new Map();
+  const variants   = [...new Set([
+    ...model.pages.flatMap(p => stepVariantsFor(p).filter(v => v !== 'pop')),
+    ...Object.keys(model.branchOrders || {})
+  ])].sort();
+  const routes = [];
   variants.forEach(v => {
-    const chain = [];
-    const optionIndex = v.charCodeAt(0) - 97;
-    const targetId = mainPage?.buyTargetIds?.[optionIndex];
-    const targetUrl = mainPage?.buyTargets?.[optionIndex];
-    let current = (targetId && model.pages.find(p => p.id === targetId))
-      || (targetUrl && model.pages.find(p => p.type === 'upsell' && p.url === targetUrl))
-      || model.pages.find(p => p.type === 'upsell' && stepVariantsFor(p).includes(v))
-      || (mainPage && findNextFunnelPage(model.pages, mainPage, v));
-    const visited = new Set();
-    while(current && !visited.has(current.id)){
-      visited.add(current.id);
-      chain.push(current);
-      // Popups are attached to their parent upsell and are part of that path.
-      model.pages.filter(p => p.isPopup && p.parentUpsellUrl === current.url)
-        .sort((a,b) => a.popupIndex - b.popupIndex)
-        .forEach(p => { if(!visited.has(p.id)){ visited.add(p.id); chain.push(p); } });
-      current = findNextFunnelPage(model.pages, current, v);
-    }
-    const signature = chain.map(p => p.id).join('|');
-    const group = routeGroups.get(signature) || {branches:[], chain};
-    group.branches.push(v);
-    routeGroups.set(signature, group);
+    const chain = Array.isArray(model.branchOrders?.[v])
+      ? model.branchOrders[v].map(id => model.pages.find(page => page.id === id)).filter(Boolean)
+      : buildBranchSequence(model, v);
+    routes.push({branch:v, chain});
   });
 
   if(mainPage){
@@ -1320,9 +1376,7 @@ function renderFlow(model, splitFunnel){
     box.appendChild(entry);
   }
 
-  [...routeGroups.values()].forEach((group, groupIndex, allGroups) => {
-    // Identical routes are shown once and labelled with every branch that
-    // shares them, while branches with different paths remain separate.
+  routes.forEach((route, routeIndex) => {
     const row = document.createElement('div');
     row.style.cssText = [
       'display:flex',
@@ -1331,22 +1385,99 @@ function renderFlow(model, splitFunnel){
       'gap:0',
       'width:100%',
       'padding:10px 0',
-      groupIndex < allGroups.length - 1 ? 'border-bottom:1px solid var(--line)' : ''
+      routeIndex < routes.length - 1 ? 'border-bottom:1px solid var(--line)' : ''
     ].filter(Boolean).join(';') + ';';
 
     // Branch label badge
     const lbl = document.createElement('div');
     lbl.className = 'flow-branch-label';
-    lbl.textContent = `Branch ${group.branches.map(v => v.toUpperCase()).join('/')}`;
+    lbl.textContent = `Branch ${route.branch.toUpperCase()}`;
     row.appendChild(lbl);
 
-    appendChain(row, group.chain);
+    appendBranchPagePicker(row, route.branch, route.chain, model);
+    appendChain(row, route.chain, true, route.branch);
     box.appendChild(row);
   });
 }
 
-function reorderPages(fromId, toId){
+function appendBranchPagePicker(row, branch, chain, model){
+  const available = model.pages.filter(page =>
+    ['upsell','downsell'].includes(page.type) && !page.isPopup && !chain.some(item => item.id === page.id)
+  );
+  if(!available.length) return;
+  const controls = document.createElement('div');
+  controls.className = 'branch-add-controls';
+  const select = document.createElement('select');
+  select.setAttribute('aria-label', `Choose a page to add to Branch ${branch.toUpperCase()}`);
+  select.innerHTML = `<option value="">Add existing page…</option>` + available.map(page =>
+    `<option value="${escapeHtml(page.id)}">${escapeHtml(labelFor(page))}${pagePathname(page.url) ? ` · ${escapeHtml(pagePathname(page.url))}` : ''}</option>`
+  ).join('');
+  const button = document.createElement('button');
+  button.type = 'button'; button.className = 'btn-ghost'; button.textContent = 'Add';
+  button.addEventListener('click', () => {
+    if(select.value) addPageToBranch(select.value, branch, chain);
+  });
+  controls.append(select, button);
+  row.appendChild(controls);
+}
+
+function addPageToBranch(pageId, branch, visibleChain = []){
+  const page = lastModel?.pages.find(item => item.id === pageId);
+  if(!page || !['upsell','downsell'].includes(page.type) || !/^[a-z]$/.test(branch)) return;
+  const existing = stepVariantsFor(page).filter(value => value !== 'pop');
+  page.manualBranchVariants = [...new Set([...(page.manualBranchVariants || existing), branch])];
+  page.excludedBranches = (page.excludedBranches || []).filter(value => value !== branch);
+  ensureBranchOrders();
+  const order = lastModel.branchOrders[branch] || (lastModel.branchOrders[branch] = visibleChain.map(item => item.id));
+  if(!order.includes(page.id)){
+    const pageStep = Number(stepNumFor(page)) || Number(page.num) || 1;
+    let insertAt = order.length;
+    if(page.type === 'downsell'){
+      const nextUpsellIndex = order.findIndex(id => {
+        const candidate = lastModel.pages.find(item => item.id === id);
+        return candidate?.type === 'upsell' && Number(stepNumFor(candidate)) > pageStep;
+      });
+      if(nextUpsellIndex >= 0) insertAt = nextUpsellIndex;
+      else {
+        const nextTyIndex = order.length;
+        insertAt = nextTyIndex;
+      }
+    } else {
+      const nextUpsellIndex = order.findIndex(id => {
+        const candidate = lastModel.pages.find(item => item.id === id);
+        return candidate?.type === 'upsell' && Number(stepNumFor(candidate)) >= pageStep;
+      });
+      if(nextUpsellIndex >= 0) insertAt = nextUpsellIndex;
+    }
+    const attachedPopups = page.type === 'upsell'
+      ? lastModel.pages.filter(item => item.isPopup && item.parentUpsellUrl === page.url).sort((a,b) => a.popupIndex - b.popupIndex)
+      : [];
+    order.splice(insertAt, 0, page.id, ...attachedPopups.map(item => item.id));
+  }
+  syncSplitPageLabels();
+  renderFlow(lastModel, lastSettings.splitFunnel);
+  renderTable(lastModel);
+  renderOutput(lastSettings.accountId, lastSettings.token, lastSettings.lang, lastModel);
+  markDocumentDirty();
+}
+
+function reorderPages(fromId, toId, branchVariant = null){
   if(!lastModel || !fromId || fromId === toId) return;
+  if(branchVariant){
+    ensureBranchOrders();
+    const order = lastModel.branchOrders[branchVariant] || [];
+    const fromRoute = order.indexOf(fromId);
+    const toRoute = order.indexOf(toId);
+    if(fromRoute < 0 || toRoute < 0) return;
+    const [movedId] = order.splice(fromRoute, 1);
+    order.splice(toRoute, 0, movedId);
+    syncSplitPageLabels();
+    renderFlow(lastModel, lastSettings.splitFunnel);
+    renderTable(lastModel);
+    renderOutput(lastSettings.accountId, lastSettings.token, lastSettings.lang, lastModel);
+    markDocumentDirty();
+    return;
+  }
   const pages = lastModel.pages;
   const from = pages.findIndex(p => p.id === fromId);
   const to = pages.findIndex(p => p.id === toId);
@@ -1461,19 +1592,67 @@ function reorderPages(fromId, toId){
   markDocumentDirty();
 }
 
-function removeFlowPage(pageId){
+function removeFlowPage(pageId, branchVariant = null){
   if(!lastModel) return;
   const page = lastModel.pages.find(p => p.id === pageId);
   if(!page || page.type === 'main') return;
+  const branches = stepVariantsFor(page).filter(value => value !== 'pop');
+  if(branchVariant && branches.includes(branchVariant) && branches.length > 1){
+    if(!window.confirm(`Remove ${labelFor(page)} from Branch ${branchVariant.toUpperCase()} only?`)) return;
+    ensureBranchOrders();
+    page.excludedBranches = [...new Set([...(page.excludedBranches || []), branchVariant])];
+    if(Array.isArray(page.manualBranchVariants)){
+      page.manualBranchVariants = page.manualBranchVariants.filter(value => value !== branchVariant);
+    }
+    lastModel.pages.forEach(source => {
+      source.buyTargetIds?.forEach((targetId, index) => {
+        if(targetId === pageId && String.fromCharCode(97 + index) === branchVariant){
+          source.buyTargetIds[index] = null;
+          if(source.buyTargets) source.buyTargets[index] = null;
+        }
+      });
+    });
+    lastModel.branchOrders[branchVariant] = (lastModel.branchOrders[branchVariant] || []).filter(id => {
+      if(id === pageId) return false;
+      const item = lastModel.pages.find(candidate => candidate.id === id);
+      return !(page.type === 'upsell' && item?.isPopup && item.parentUpsellUrl === page.url);
+    });
+    syncSplitPageLabels();
+    if(!stepVariantsFor(page).some(value => value !== 'pop')){
+      const orphanIds = new Set([page.id]);
+      if(page.type === 'upsell'){
+        lastModel.pages.filter(item => item.isPopup && item.parentUpsellUrl === page.url).forEach(item => orphanIds.add(item.id));
+      }
+      permanentlyRemoveFlowPages(orphanIds);
+      syncSplitPageLabels();
+    }
+    renderFlow(lastModel, lastSettings.splitFunnel);
+    renderTable(lastModel);
+    renderOutput(lastSettings.accountId, lastSettings.token, lastSettings.lang, lastModel);
+    markDocumentDirty();
+    return;
+  }
   const removeIds = new Set([page.id]);
   if(page.type === 'upsell'){
     lastModel.pages.filter(p => p.isPopup && p.parentUpsellUrl === page.url).forEach(p => removeIds.add(p.id));
   }
-  const removedPages = lastModel.pages.filter(p => removeIds.has(p.id));
-  const removedUrls = new Set(removedPages.map(p => p.url).filter(Boolean));
   if(!window.confirm(`Remove ${labelFor(page)}${removeIds.size > 1 ? ' and its popup pages' : ''} from the funnel?`)) return;
 
+  permanentlyRemoveFlowPages(removeIds);
+  syncSplitPageLabels();
+  renderFlow(lastModel, lastSettings.splitFunnel);
+  renderTable(lastModel);
+  renderOutput(lastSettings.accountId, lastSettings.token, lastSettings.lang, lastModel);
+  markDocumentDirty();
+}
+
+function permanentlyRemoveFlowPages(removeIds){
+  const removedPages = lastModel.pages.filter(p => removeIds.has(p.id));
+  const removedUrls = new Set(removedPages.map(p => p.url).filter(Boolean));
   lastModel.pages = lastModel.pages.filter(p => !removeIds.has(p.id));
+  Object.keys(lastModel.branchOrders || {}).forEach(branch => {
+    lastModel.branchOrders[branch] = lastModel.branchOrders[branch].filter(id => !removeIds.has(id));
+  });
   lastModel.pages.forEach(source => {
     source.buyTargetIds?.forEach((targetId, index) => {
       if(removeIds.has(targetId)){
@@ -1495,12 +1674,6 @@ function removeFlowPage(pageId){
       p.parentUpsellUrl = priorUpsell?.url || null;
     }
   });
-
-  syncSplitPageLabels();
-  renderFlow(lastModel, lastSettings.splitFunnel);
-  renderTable(lastModel);
-  renderOutput(lastSettings.accountId, lastSettings.token, lastSettings.lang, lastModel);
-  markDocumentDirty();
 }
 
 function toggleProductSplit(sourceId){
@@ -1538,12 +1711,14 @@ function syncSplitPageLabels(){
       (source.buyTargetIds || []).forEach((targetId, i) => {
         const target = targetId && lastModel.pages.find(p => p.id === targetId);
         if(!target || target.type !== 'upsell') return;
+        const branch = String.fromCharCode(97 + i);
+        if((target.excludedBranches || []).includes(branch)) return;
         const assignment = assignments.get(target.id) || {
           target,
           num: source.type === 'main' ? 1 : stepNumFor(source) + 1,
           variants: new Set()
         };
-        assignment.variants.add(String.fromCharCode(97 + i));
+        assignment.variants.add(branch);
         assignments.set(target.id, assignment);
       });
     });
@@ -1567,18 +1742,20 @@ function syncSplitPageLabels(){
       [...root.variants].forEach(variant => {
         let current = root.target;
         let currentNum = root.num;
+        const routePages = branchOrderedPages(lastModel.pages, variant);
         // Process the selected root first, then guard against loops as the
         // route advances through subsequent upsells.
         const visited = new Set();
         while(current && !visited.has(current.id)){
           visited.add(current.id);
-          const start = lastModel.pages.indexOf(current);
+          const start = routePages.indexOf(current);
           let next = null;
-          for(let i = start + 1; i < lastModel.pages.length; i++){
-            const candidate = lastModel.pages[i];
+          for(let i = start + 1; i < routePages.length; i++){
+            const candidate = routePages[i];
             if(candidate.isPopup) continue;
+            if((candidate.excludedBranches || []).includes(variant)) continue;
             if(candidate.type === 'downsell'){
-              const memberships = candidate.variant ? [candidate.variant] : [];
+              const memberships = explicitBranchMemberships(candidate, assignments);
               if(!memberships.length || memberships.includes(variant)){
                 const parent = lastModel.pages.find(p => p.type === 'upsell' && p.url === candidate.parentUpsellUrl);
                 const originalParentNum = parent?.originalNum ?? parent?.num ?? current.originalNum ?? current.num;
@@ -1588,8 +1765,7 @@ function syncSplitPageLabels(){
               continue;
             }
             if(candidate.type !== 'upsell') continue;
-            const explicit = assignments.get(candidate.id);
-            const memberships = explicit ? [...explicit.variants] : (candidate.variant ? [candidate.variant] : []);
+            const memberships = explicitBranchMemberships(candidate, assignments);
             if(!memberships.length || memberships.includes(variant)) { next = candidate; break; }
           }
           if(!next) break;
@@ -1634,7 +1810,7 @@ function refreshBranchBuyTargets(){
       const optionCount = mainPage.options.length || mainPage.buyTargets.length;
       mainPage.buyTargets = Array.from({length:optionCount}, (_, index) => {
         const selected = mainPage.buyTargetIds?.[index]
-          && lastModel.pages.find(p => p.id === mainPage.buyTargetIds[index] && p.type === 'upsell');
+          && lastModel.pages.find(p => p.id === mainPage.buyTargetIds[index] && p.type === 'upsell' && !(p.excludedBranches || []).includes(String.fromCharCode(97 + index)));
         if(selected) return selected.url;
         const target = findNextUpsellPage(lastModel.pages, mainPage, String.fromCharCode(97 + index));
         return target ? target.url : thankYou;
@@ -1659,7 +1835,7 @@ function refreshBranchBuyTargets(){
 
     if(p.splitByProduct && p.options.length >= 2){
       p.buyTargets = p.options.map((_,i) => {
-        const selected = p.buyTargetIds?.[i] && lastModel.pages.find(q => q.id === p.buyTargetIds[i]);
+        const selected = p.buyTargetIds?.[i] && lastModel.pages.find(q => q.id === p.buyTargetIds[i] && !(q.excludedBranches || []).includes(String.fromCharCode(97 + i)));
         if(selected) return selected.url;
         const optionBranch = String.fromCharCode(97+i);
         const target = p.type === 'upsell'
@@ -1709,6 +1885,19 @@ function setProductSplitDestination(sourceId, optionIndex, targetId){
   source.buyTargetIds[optionIndex] = target.id;
   source.buyTargets[optionIndex] = target.url;
   source.buyTarget = source.buyTargets[0] || lastModel.thankYouUrl;
+  if(lastModel.branchOrders){
+    const branch = String.fromCharCode(97 + optionIndex);
+    ensureBranchOrders();
+    const order = lastModel.branchOrders[branch] || (lastModel.branchOrders[branch] = []);
+    const targetPopups = target.type === 'upsell'
+      ? lastModel.pages.filter(page => page.isPopup && page.parentUpsellUrl === target.url).sort((a,b) => a.popupIndex - b.popupIndex)
+      : [];
+    [target, ...targetPopups].reverse().forEach(page => {
+      const index = order.indexOf(page.id);
+      if(index >= 0) order.splice(index, 1);
+      order.unshift(page.id);
+    });
+  }
   syncSplitPageLabels();
   renderFlow(lastModel, lastSettings.splitFunnel);
   renderTable(lastModel);
