@@ -23,6 +23,12 @@ Add these Vercel environment variables to Production, Preview, and Development a
 
 The app also needs the existing `SUPABASE_URL` and `SUPABASE_SECRET_KEY` variables. Do not add secret values to Git or the browser code.
 
+## Tool login and shared previews
+
+The builder and its private APIs require a password login. In Vercel Project Settings → Environment Variables, add `TOOL_LOGIN_PASSWORD` with the value `bgteam` for each environment you use (Development, Preview, and Production), then redeploy. Do not put the password in Git or in the browser code. The app signs an HTTP-only session cookie that expires after 7 days; it uses `SUPABASE_SECRET_KEY` to sign sessions unless you also configure a separate random `TOOL_SESSION_SECRET`.
+
+Shared document URLs remain public and read-only. They are served from a separate preview page, so recipients can see the document and its creation date without loading the builder or Affiliate Manager. Document search, edit, delete, and the other tool APIs require an authenticated session.
+
 ### 3. Redeploy
 
 After running the SQL and adding the variables in Vercel, redeploy the project. The API route is `api/documents.js`; Vercel installs the S3 client dependency from `package.json`.
@@ -32,7 +38,7 @@ After running the SQL and adding the variables in Vercel, redeploy the project. 
 - Generate checks for documents with the same account ID and product name. If a match exists, choose to open the existing document for editing or save this generation as a second document.
 - A new document is written to R2 and indexed in Supabase. Product variants include step, product name, bottle count, codename, and SKU.
 - Search accepts an account ID or product name. Edit restores the stored builder settings and resolved flow.
-- The share URL opens a read-only preview and shows the original creation date. Anyone with the tool URL can search and edit; anyone with a share URL can view that document.
+- The share URL opens a read-only preview and shows the original creation date. Logged-in users can search and edit; anyone with a share URL can view that document.
 - Display names use `Product - Account ID - DD/MM/YYYY`. Downloaded filenames use `DD-MM-YYYY` because slashes are path separators on common operating systems.
 
 ## Affiliate Manager

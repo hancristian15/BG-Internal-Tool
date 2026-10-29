@@ -8,6 +8,7 @@
   "dependencies": {
     "@aws-sdk/client-s3": "^3.0.0",
     "@sparticuz/chromium": "153.0.0",
+    "@vercel/functions": "^3.10.5",
     "puppeteer-core": "25.11.0"
   }
 }

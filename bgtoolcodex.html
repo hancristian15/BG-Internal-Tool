@@ -222,6 +222,7 @@
       <button class="tool-nav-btn" id="affiliateManagerNav" type="button" aria-pressed="false">
         <span>BuyGoods Affiliate Manager Tool<span class="tool-nav-subtitle">Tracking verification</span></span><span class="tool-nav-mark">AM</span>
       </button>
+      <button class="btn-ghost" type="button" onclick="logoutTool()">Log out</button>
     </div>
   </nav>
   <main class="app-view" id="builderView">
@@ -343,7 +344,7 @@ Downsell 1: https://retraslim.app/orderdw1-v1?f=89s6iw&fnid=19&pfnid=17
   <div class="panel" id="outputPanel" style="display:none;">
     <h2>Generated output</h2>
     <div class="actions" style="margin-top:0;margin-bottom:14px;">
-      <button class="btn-ghost" onclick="previewOutput()">Preview</button>
+      <button class="btn-ghost" onclick="previewOrShareOutput()">Preview / Share</button>
       <button class="btn-ghost" onclick="copyOutput()">Copy to clipboard</button>
       <button class="btn-ghost" onclick="downloadOutput()">Download .txt</button>
       <button class="btn-ghost" id="saveDocumentButton" onclick="saveDocumentChanges()" style="display:none;">Save changes</button>
@@ -429,6 +430,7 @@ let lastModel = null;
 let lastOutput = "";
 let lastSettings = null;
 let editingDocumentId = null;
+let currentShareToken = '';
 let pendingDuplicateDocuments = [];
 let pendingDocumentContext = null;
 async function recordGenerateClick(){
@@ -794,6 +796,7 @@ function generate(){
   }
 
   const model = buildModel(pages, productName, thankYouUrl, accountId, splitFunnel);
+  currentShareToken = '';
   model.pages.forEach((p, i) => { p.id = `page-${i}`; p.originalNum = p.num; p.originalDownsellNum = p.sourceDownsellNum; });
   model.pages.forEach(p => { p.originalLabel = labelFor(p); });
   lastModel = model;
@@ -825,11 +828,9 @@ async function handleGenerateClick(){
 function setDocumentStatus(message, isError = false, shareToken = ''){
   const status = document.getElementById('documentSaveStatus');
   if(!status) return;
+  currentShareToken = shareToken || '';
   status.className = `doc-status${isError ? ' err' : ''}`;
-  if(shareToken){
-    const link = makeShareUrl(shareToken);
-    status.innerHTML = `${escapeHtml(message)} · <a href="${escapeHtml(link)}" target="_blank" rel="noopener">Preview/share link</a>`;
-  } else status.textContent = message;
+  status.textContent = message;
 }
 
 function markDocumentDirty(){
@@ -841,8 +842,14 @@ function markDocumentDirty(){
 async function apiJson(url, options){
   const response = await fetch(url, options);
   const body = await response.json().catch(() => ({}));
+  if(response.status === 401) window.location.assign('/');
   if(!response.ok) throw Object.assign(new Error(body.error || `Request failed (${response.status})`), {status:response.status, body});
   return body;
+}
+
+async function logoutTool(){
+  try { await fetch('/api/auth?action=logout', {method:'POST'}); }
+  finally { window.location.replace('/'); }
 }
 
 function currentProducts(){
@@ -895,7 +902,7 @@ async function handleGeneratedDocument(){
 function showDuplicateDialog(){
   const docs = pendingDuplicateDocuments;
   document.getElementById('duplicateMessage').textContent = `A saved document already exists for account ${pendingDocumentContext.accountId} and product ${pendingDocumentContext.productName}. Choose whether to open the existing document or save this generation as another document.`;
-  document.getElementById('duplicateChoices').innerHTML = `<div class="doc-results">${docs.map(doc => `<div class="doc-card"><div><div class="doc-card-title">${escapeHtml(doc.document_name)}</div><div class="doc-card-meta">Created ${formatDocumentDate(doc.created_at)}</div></div><div class="doc-card-actions"><a class="btn-ghost" href="${escapeHtml(makeShareUrl(doc.share_token))}" target="_blank" rel="noopener">Preview</a></div></div>`).join('')}</div>`;
+  document.getElementById('duplicateChoices').innerHTML = `<div class="doc-results">${docs.map(doc => `<div class="doc-card"><div><div class="doc-card-title">${escapeHtml(doc.document_name)}</div><div class="doc-card-meta">Created ${formatDocumentDate(doc.created_at)}</div></div><div class="doc-card-actions"><a class="btn-ghost" href="${escapeHtml(makeShareUrl(doc.share_token))}" target="_blank" rel="noopener">Preview / Share</a></div></div>`).join('')}</div>`;
   document.getElementById('duplicateModal').style.display = 'flex';
 }
 
@@ -961,6 +968,16 @@ function makeShareUrl(token){
   return share.toString();
 }
 
+function previewOrShareOutput(){
+  if(currentShareToken){
+    const preview = window.open(makeShareUrl(currentShareToken), '_blank');
+    if(preview) preview.opener = null;
+    if(!preview) setDocumentStatus('Allow pop-ups to open the saved preview/share page.', true, currentShareToken);
+    return;
+  }
+  previewOutput();
+}
+
 let documentSearchTimer = null;
 let documentSearchSequence = 0;
 
@@ -974,7 +991,7 @@ async function searchSavedDocuments(){
     const data = await apiJson(`/api/documents?action=search&q=${encodeURIComponent(query)}`);
     if(requestSequence !== documentSearchSequence) return;
     if(!data.documents?.length){ results.innerHTML = '<div class="doc-status">No saved documents found.</div>'; return; }
-    results.innerHTML = data.documents.map(doc => `<div class="doc-card"><div><div class="doc-card-title">${escapeHtml(doc.document_name)}</div><div class="doc-card-meta">Account ${escapeHtml(doc.account_id)} · ${escapeHtml(doc.product_name)} · Created ${formatDocumentDate(doc.created_at)}</div></div><div class="doc-card-actions"><a class="btn-ghost" href="${escapeHtml(makeShareUrl(doc.share_token))}" target="_blank" rel="noopener">Preview</a><button class="btn-primary" onclick="loadSavedDocument('${escapeHtml(doc.id)}')">Edit</button><button class="btn-danger" onclick="deleteSavedDocument('${escapeHtml(doc.id)}')">Delete</button></div></div>`).join('');
+    results.innerHTML = data.documents.map(doc => `<div class="doc-card"><div><div class="doc-card-title">${escapeHtml(doc.document_name)}</div><div class="doc-card-meta">Account ${escapeHtml(doc.account_id)} · ${escapeHtml(doc.product_name)} · Created ${formatDocumentDate(doc.created_at)}</div></div><div class="doc-card-actions"><a class="btn-ghost" href="${escapeHtml(makeShareUrl(doc.share_token))}" target="_blank" rel="noopener">Preview / Share</a><button class="btn-primary" onclick="loadSavedDocument('${escapeHtml(doc.id)}')">Edit</button><button class="btn-danger" onclick="deleteSavedDocument('${escapeHtml(doc.id)}')">Delete</button></div></div>`).join('');
   } catch(error) {
     if(requestSequence === documentSearchSequence) results.textContent = `Search failed: ${error.message}`;
   }

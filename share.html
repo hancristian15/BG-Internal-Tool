@@ -1,0 +1,56 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="color-scheme" content="light">
+  <title>Shared BuyGoods document</title>
+  <style>
+    :root{color-scheme:light;--ink:#29271f;--muted:#706b60;--cream:#f4efe4;--card:#fffdf8;--line:#ded7ca;--brown:#805033}
+    *{box-sizing:border-box}body{margin:0;padding:30px;background:var(--cream);color:var(--ink);font:14px/1.55 Arial,sans-serif}
+    main{max-width:1000px;margin:0 auto;padding:28px;background:var(--card);border:1px solid var(--line);border-radius:12px;box-shadow:0 12px 34px #37260f12}
+    .eyebrow{margin:0 0 6px;color:var(--brown);font-size:11px;font-weight:700;letter-spacing:.12em;text-transform:uppercase}h1{margin:0 0 6px;font-size:23px}#meta{margin:0 0 20px;color:var(--muted)}
+    .actions{display:flex;gap:8px;margin-bottom:16px}button{padding:9px 13px;border:1px solid var(--brown);border-radius:7px;background:var(--brown);color:#fffaf0;font-weight:600;cursor:pointer}button:hover{background:#694128}
+    pre{margin:0;max-height:75vh;overflow:auto;white-space:pre-wrap;overflow-wrap:anywhere;background:#f8f5ee;border:1px solid var(--line);border-radius:8px;padding:18px;font:13px/1.55 Consolas,monospace}
+    @media(max-width:600px){body{padding:12px}main{padding:17px}h1{font-size:19px}}
+  </style>
+</head>
+<body>
+  <main>
+    <p class="eyebrow">Shared document</p>
+    <h1 id="title">Loading preview…</h1>
+    <p id="meta"></p>
+    <div class="actions"><button id="copyButton" type="button">Copy share URL</button></div>
+    <pre id="output"></pre>
+  </main>
+  <script>
+    const params = new URLSearchParams(location.search);
+    const token = params.get('token') || params.get('share') || '';
+    const title = document.getElementById('title');
+    const meta = document.getElementById('meta');
+    const output = document.getElementById('output');
+    document.getElementById('copyButton').addEventListener('click', async () => {
+      try { await navigator.clipboard.writeText(location.href); meta.textContent = 'Share URL copied.'; }
+      catch(_) { window.prompt('Copy this share URL:', location.href); }
+    });
+    (async () => {
+      if(!token){ title.textContent = 'Share link is missing'; output.textContent = 'Open the complete shared document URL.'; return; }
+      try {
+        const response = await fetch(`/api/documents?action=share&token=${encodeURIComponent(token)}`, {cache:'no-store'});
+        const data = await response.json().catch(() => ({}));
+        if(!response.ok) throw new Error(data.error || `Could not load document (${response.status})`);
+        document.title = data.documentName;
+        title.textContent = data.documentName;
+        const date = new Date(data.createdAt);
+        const formatted = Number.isNaN(date.getTime()) ? 'unknown date' : new Intl.DateTimeFormat('en-GB', {timeZone:'Europe/Bucharest',day:'2-digit',month:'2-digit',year:'numeric'}).format(date);
+        meta.textContent = `Created ${formatted}`;
+        output.textContent = data.output;
+      } catch(error) {
+        title.textContent = 'Could not load this shared document';
+        meta.textContent = error.message;
+        output.textContent = '';
+      }
+    })();
+  </script>
+</body>
+</html>
